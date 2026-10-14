@@ -1,0 +1,7 @@
+target/
+*.log
+.git/
+.gitignore
+*.md
+docs/
+src/main/resources/static/uploads/
