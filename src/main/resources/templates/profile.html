@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${user.fullName + ' - Socialo'}">Profile - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/profile.css}">
+    <link rel="stylesheet" th:href="@{/css/cover-fix.css}">
+    <style>
+        .lock-badge {
+            display:inline-flex;align-items:center;gap:6px;
+            background:rgba(239,68,68,.1);color:#ef4444;
+            border:1px solid rgba(239,68,68,.25);
+            border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:700;
+        }
+    </style>
+</head>
+<body>
+
+<header class="navbar">
+    <a th:href="@{/home}" class="brand">
+        <img th:src="@{/images/socialo-logo.png}" class="logo" alt="Logo">
+        <span>Socialo</span>
+    </a>
+    <div class="nav-actions">
+        <a th:href="@{/home}" class="nav-btn"><i class="fa-solid fa-house"></i> Home</a>
+        <a th:href="@{/chat}" class="nav-btn"><i class="fa-regular fa-comment-dots"></i> Messenger</a>
+        <a th:href="@{/settings}" class="nav-btn"><i class="fa-solid fa-gear"></i> Settings</a>
+        <a th:href="@{/notifications}" class="nav-btn" style="position:relative;">
+            <i class="fa-regular fa-bell"></i>
+            <span th:if="${unreadNotifications > 0}" th:text="${unreadNotifications}"
+                  style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.65rem;display:flex;align-items:center;justify-content:center;font-weight:700;"></span>
+        </a>
+    </div>
+</header>
+
+<main class="profile-page">
+
+    <!-- Flash messages -->
+    <div th:if="${success}" style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:12px 20px;border-radius:14px;margin:12px auto;max-width:900px;font-size:.9rem;" th:text="${success}"></div>
+    <div th:if="${error}"   style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 20px;border-radius:14px;margin:12px auto;max-width:900px;font-size:.9rem;" th:text="${error}"></div>
+
+    <!-- Cover Section -->
+    <section class="cover-section">
+        <div class="cover-photo">
+            <img th:src="${user.displayCoverImage}" alt="Cover">
+            <a th:href="@{/edit-profile}" class="cover-edit-btn">
+                <i class="fa-solid fa-camera"></i> Change Cover
+            </a>
+        </div>
+
+        <div class="profile-header">
+            <div class="profile-avatar-wrap">
+                <img th:src="${user.displayProfileImage}" class="profile-avatar" alt="Profile">
+                <a th:href="@{/edit-profile}" class="avatar-edit-btn">
+                    <i class="fa-solid fa-camera"></i>
+                </a>
+            </div>
+
+            <div class="profile-main">
+                <div class="profile-name-row">
+                    <div>
+                        <h1 th:text="${user.fullName}">Your Name</h1>
+                        <p class="username"
+                           th:text="${'@' + (user.username != null ? user.username : 'user')}">@user</p>
+                    </div>
+                    <!-- Profile Lock badge -->
+                    <span th:if="${user.profileLocked}" class="lock-badge">
+                        <i class="fa-solid fa-lock"></i> Profile Locked
+                    </span>
+                </div>
+
+                <p class="bio" th:if="${user.bio != null and !#strings.isEmpty(user.bio)}"
+                   th:text="${user.bio}">Bio</p>
+
+                <div class="profile-stats">
+                    <div class="stat"><strong th:text="${postCount}">0</strong><span>Posts</span></div>
+                    <div class="stat"><strong th:text="${followerCount}">0</strong><span>Followers</span></div>
+                    <div class="stat"><strong th:text="${followingCount}">0</strong><span>Following</span></div>
+                    <div class="stat"><strong th:text="${friendCount}">0</strong><span>Friends</span></div>
+                </div>
+
+                <div class="profile-actions">
+                    <a th:href="@{/edit-profile}" class="secondary-btn">
+                        <i class="fa-solid fa-user-pen"></i> Edit Profile
+                    </a>
+
+                    <!-- Profile Lock toggle (Part 10) -->
+                    <form th:action="@{/profile/lock}" method="post" style="display:inline;">
+                        <button type="submit"
+                                th:class="${user.profileLocked ? 'danger-btn' : 'secondary-btn'}"
+                                th:title="${user.profileLocked ? 'Unlock your profile' : 'Lock your profile (friends only)'}">
+                            <i th:class="${user.profileLocked ? 'fa-solid fa-lock-open' : 'fa-solid fa-lock'}"></i>
+                            <span th:text="${user.profileLocked ? 'Unlock Profile' : 'Lock Profile'}">Lock</span>
+                        </button>
+                    </form>
+
+                    <a th:href="@{/settings}" class="secondary-btn">
+                        <i class="fa-solid fa-gear"></i> Settings
+                    </a>
+                    <a th:href="@{/logout}" class="danger-btn">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tabs -->
+    <section class="profile-tabs">
+        <a th:href="@{/profile}" class="tab active"><i class="fa-solid fa-table-cells-large"></i> Posts</a>
+        <a th:href="@{/photos}"  class="tab"><i class="fa-regular fa-image"></i> Photos</a>
+        <a th:href="@{/videos}"  class="tab"><i class="fa-solid fa-video"></i> Videos</a>
+        <a th:href="@{/friends}" class="tab"><i class="fa-solid fa-user-group"></i> Friends</a>
+    </section>
+
+    <!-- Content -->
+    <div class="profile-content">
+
+        <!-- Sidebar -->
+        <aside class="profile-sidebar">
+            <div class="info-card">
+                <h3>About</h3>
+                <ul class="info-list">
+                    <li th:if="${user.location != null and !#strings.isEmpty(user.location)}">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span th:text="${'Lives in ' + user.location}">Location</span>
+                    </li>
+                    <li th:if="${user.ssc != null and !#strings.isEmpty(user.ssc)}">
+                        <i class="fa-solid fa-school"></i>
+                        <span th:text="${user.ssc}">SSC</span>
+                    </li>
+                    <li th:if="${user.hsc != null and !#strings.isEmpty(user.hsc)}">
+                        <i class="fa-solid fa-building-columns"></i>
+                        <span th:text="${user.hsc}">HSC</span>
+                    </li>
+                    <li th:if="${user.university != null and !#strings.isEmpty(user.university)}">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <span th:text="${user.university}">University</span>
+                    </li>
+                    <li th:if="${user.work != null and !#strings.isEmpty(user.work)}">
+                        <i class="fa-solid fa-briefcase"></i>
+                        <span th:text="${user.work}">Work</span>
+                    </li>
+                    <li th:if="${user.relationship != null and !#strings.isEmpty(user.relationship)}">
+                        <i class="fa-solid fa-heart"></i>
+                        <span th:text="${user.relationship}">Relationship</span>
+                    </li>
+                    <li>
+                        <i class="fa-regular fa-calendar"></i>
+                        <span th:text="${'Joined ' + #temporals.format(user.createdAt, 'MMMM yyyy')}">Joined</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="info-card">
+                <div class="card-header">
+                    <h3>Friends</h3>
+                    <a th:href="@{/friends}">See all</a>
+                </div>
+                <div class="friend-grid">
+                    <th:block th:each="friend,stat : ${friends}" th:if="${stat.index < 6}">
+                        <a th:href="@{/user-profile/{id}(id=${friend.id})}" class="friend-item" style="text-decoration:none;color:inherit;">
+                            <img th:src="${friend.displayProfileImage}" th:alt="${friend.fullName}">
+                            <span th:text="${friend.firstName}">Friend</span>
+                        </a>
+                    </th:block>
+                    <div th:if="${#lists.isEmpty(friends)}" style="color:#94a3b8;font-size:.85rem;padding:8px;">No friends yet</div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Posts Feed -->
+        <section class="profile-feed">
+
+            <th:block th:if="${#lists.isEmpty(posts)}">
+                <div style="text-align:center;padding:48px 24px;background:#fff;border-radius:24px;box-shadow:0 4px 20px rgba(15,23,42,.05);">
+                    <i class="fa-regular fa-newspaper" style="font-size:3rem;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+                    <h3 style="color:#64748b;">No posts yet</h3>
+                    <a th:href="@{/create-post}" style="display:inline-block;margin-top:14px;background:#1d4ed8;color:#fff;border-radius:12px;padding:10px 22px;text-decoration:none;font-weight:600;font-size:.9rem;">
+                        Create First Post
+                    </a>
+                </div>
+            </th:block>
+
+            <th:block th:each="post : ${posts}">
+                <article class="post-card">
+                    <div class="post-header">
+                        <div class="post-user">
+                            <img th:src="${user.displayProfileImage}" class="mini-avatar" alt="">
+                            <div>
+                                <h4 th:text="${user.fullName}">Name</h4>
+                                <p th:text="${#temporals.format(post.createdAt, 'MMM d, yyyy')}">Date</p>
+                            </div>
+                        </div>
+                        <div style="position:relative;">
+                            <button class="icon-circle" onclick="toggleMenu(this)">
+                                <i class="fa-solid fa-ellipsis"></i>
+                            </button>
+                            <div class="post-menu" style="display:none;position:absolute;right:0;top:44px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:160px;z-index:100;padding:8px;">
+                                <a th:href="@{/post/{id}(id=${post.id})}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;text-decoration:none;color:#111827;border-radius:10px;font-size:.9rem;">
+                                    <i class="fa-regular fa-pen-to-square"></i> Edit
+                                </a>
+                                <form th:action="@{/post/delete/{id}(id=${post.id})}" method="post" onsubmit="return confirm('Delete?')">
+                                    <button type="submit" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;background:transparent;color:#ef4444;border-radius:10px;font-size:.9rem;cursor:pointer;">
+                                        <i class="fa-regular fa-trash-can"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="post-text" th:if="${post.caption != null}" th:text="${post.caption}"></p>
+                    <th:block th:if="${post.firstImageUrl != null}">
+                        <img th:src="${post.firstImageUrl}" class="post-image"
+                             style="width:100%;max-height:480px;object-fit:contain;border-radius:14px;background:#f8fafc;"
+                             alt="Post">
+                    </th:block>
+
+                    <div class="post-actions">
+                        <form th:action="@{/post/react/{id}(id=${post.id})}" method="post" style="flex:1;">
+                            <button type="submit" style="width:100%;"><i class="fa-regular fa-thumbs-up"></i> Like</button>
+                        </form>
+                        <a th:href="@{/post/{id}(id=${post.id})}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#475569;font-weight:600;">
+                            <i class="fa-regular fa-comment"></i> Comment
+                        </a>
+                        <button style="flex:1;"><i class="fa-regular fa-paper-plane"></i> Share</button>
+                    </div>
+                </article>
+            </th:block>
+
+        </section>
+    </div>
+
+</main>
+
+<script>
+function toggleMenu(btn) {
+    const m = btn.nextElementSibling;
+    m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.post-menu').forEach(m => {
+        if (!m.previousElementSibling.contains(e.target) && !m.contains(e.target))
+            m.style.display = 'none';
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/settings.css}">
+</head>
+<body>
+
+<header class="topbar">
+    <a th:href="@{/home}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1>Settings</h1>
+    <a th:href="@{/profile}" class="profile-btn">
+        <img th:src="${user.displayProfileImage}" alt="Profile"
+             style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+    </a>
+</header>
+
+<main class="settings-wrapper">
+
+    <!-- Flash messages -->
+    <div th:if="${success}" style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:12px 16px;border-radius:14px;margin-bottom:16px;font-size:.9rem;" th:text="${success}"></div>
+    <div th:if="${error}" style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 16px;border-radius:14px;margin-bottom:16px;font-size:.9rem;" th:text="${error}"></div>
+
+    <div class="settings-layout">
+
+        <!-- Sidebar tabs (visual only — all sections on one page) -->
+        <aside class="settings-sidebar">
+            <a href="#account" class="menu-item active"><i class="fa-regular fa-user"></i> Account</a>
+            <a href="#privacy" class="menu-item"><i class="fa-solid fa-shield-halved"></i> Privacy</a>
+            <a href="#security" class="menu-item"><i class="fa-solid fa-lock"></i> Security</a>
+            <a href="#blocked" class="menu-item"><i class="fa-solid fa-ban"></i> Blocked Users</a>
+            <a href="#danger" class="menu-item danger"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</a>
+        </aside>
+
+        <section class="settings-content">
+
+            <!-- Profile Preview -->
+            <div class="profile-preview">
+                <img th:src="${user.displayProfileImage}" class="preview-avatar" alt="">
+                <div>
+                    <h2 th:text="${user.fullName}">Name</h2>
+                    <p th:text="${'@' + (user.username != null ? user.username : 'user')}">@user</p>
+                </div>
+            </div>
+
+            <!-- ===== ACCOUNT ===== -->
+            <div class="settings-card" id="account">
+                <h3>Account Information</h3>
+                <form th:action="@{/settings/account}" method="post">
+                    <div class="field-grid">
+                        <div class="field-group">
+                            <label>First Name</label>
+                            <input type="text" name="firstName" th:value="${user.firstName}">
+                        </div>
+                        <div class="field-group">
+                            <label>Last Name</label>
+                            <input type="text" name="lastName" th:value="${user.lastName}">
+                        </div>
+                        <div class="field-group">
+                            <label>Email Address</label>
+                            <input type="email" name="email" th:value="${user.email}" readonly
+                                   style="opacity:.6;cursor:not-allowed;" title="Contact support to change email">
+                        </div>
+                        <div class="field-group">
+                            <label>Phone Number</label>
+                            <input type="tel" name="phone" th:value="${user.phone}" readonly
+                                   style="opacity:.6;cursor:not-allowed;" title="Contact support to change phone">
+                        </div>
+                    </div>
+                    <div class="field-group full-width">
+                        <label>Bio</label>
+                        <textarea rows="3" name="bio" th:text="${user.bio}"></textarea>
+                    </div>
+                    <button type="submit" class="save-btn" style="margin-top:12px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Account
+                    </button>
+                </form>
+            </div>
+
+            <!-- ===== PRIVACY ===== -->
+            <div class="settings-card" id="privacy">
+                <h3>Privacy Settings</h3>
+                <form th:action="@{/settings/privacy}" method="post">
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Private Account</strong>
+                            <p>Only approved followers can see your content</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="privateAccount"
+                                   th:checked="${user.isPrivate()}">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Show Online Status</strong>
+                            <p>Friends can see when you are active</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="showOnlineStatus"
+                                   th:checked="${settings.isShowOnlineStatus()}">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-item">
+                        <div>
+                            <strong>Allow Follow Requests</strong>
+                            <p>Others can send follow requests to your account</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" name="allowFollowRequests"
+                                   th:checked="${settings.isAllowFollowRequests()}">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <button type="submit" class="save-btn" style="margin-top:16px;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Privacy
+                    </button>
+                </form>
+            </div>
+
+            <!-- ===== SECURITY / CHANGE PASSWORD ===== -->
+            <div class="settings-card" id="security">
+                <h3>Change Password</h3>
+                <form th:action="@{/settings/password}" method="post">
+                    <div class="field-grid">
+                        <div class="field-group">
+                            <label>Current Password</label>
+                            <input type="password" name="currentPassword" placeholder="Enter current password">
+                        </div>
+                        <div class="field-group">
+                            <label>New Password</label>
+                            <input type="password" name="newPassword" placeholder="Enter new password (min 6)">
+                        </div>
+                        <div class="field-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" name="confirmNewPassword" placeholder="Confirm new password">
+                        </div>
+                    </div>
+                    <button type="submit" class="save-btn" style="margin-top:12px;">
+                        <i class="fa-solid fa-lock"></i> Change Password
+                    </button>
+                </form>
+            </div>
+
+            <!-- ===== BLOCKED USERS ===== -->
+            <div class="settings-card" id="blocked">
+                <h3>Blocked Users</h3>
+                <p style="color:#6b7280;font-size:.85rem;margin-bottom:14px;">
+                    Blocked users cannot see your profile, message you, or send friend requests.
+                </p>
+                <th:block th:if="${blockedUsers == null or #lists.isEmpty(blockedUsers)}">
+                    <p style="color:#94a3b8;font-size:.88rem;">You have not blocked anyone.</p>
+                </th:block>
+                <th:block th:each="blocked : ${blockedUsers}">
+                    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6;">
+                        <img th:src="${blocked.displayProfileImage}" th:alt="${blocked.fullName}"
+                             style="width:42px;height:42px;border-radius:50%;object-fit:cover;">
+                        <div style="flex:1;">
+                            <a th:href="@{/user-profile/{id}(id=${blocked.id})}"
+                               th:text="${blocked.fullName}"
+                               style="font-weight:600;font-size:.9rem;text-decoration:none;color:#0f172a;"></a>
+                        </div>
+                        <form th:action="@{/unblock/{id}(id=${blocked.id})}" method="post">
+                            <button type="submit"
+                                    style="border:1px solid #e2e8f0;background:#fff;color:#374151;border-radius:10px;padding:6px 14px;cursor:pointer;font-family:inherit;font-size:.82rem;font-weight:600;">
+                                Unblock
+                            </button>
+                        </form>
+                    </div>
+                </th:block>
+            </div>
+
+            <!-- ===== DANGER ZONE ===== -->
+            <div class="settings-card danger-card" id="danger">
+                <h3>Danger Zone</h3>
+                <div class="danger-actions">
+                    <form th:action="@{/settings/delete-account}" method="post"
+                          onsubmit="return confirm('Are you sure? This will deactivate your account.')">
+                        <button type="submit" class="danger-solid">Deactivate Account</button>
+                    </form>
+                </div>
+            </div>
+
+        </section>
+    </div>
+</main>
+
+</body>
+</html>

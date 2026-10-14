@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Center - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/help.css}">
+</head>
+<body>
+
+<header class="navbar">
+    <a th:href="@{/home}" class="brand">
+        <i class="fa-solid fa-arrow-left"></i>
+        <img th:src="@{/images/socialo-logo.png}" alt="Socialo Logo" class="logo">
+        <span>Socialo</span>
+    </a>
+</header>
+
+<main class="help-page">
+
+    <section class="hero-section">
+        <div class="hero-icon"><i class="fa-regular fa-circle-question"></i></div>
+        <h1>How can we help you?</h1>
+        <p>Find answers to common questions about your account, privacy, messenger, stories, posts and more.</p>
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" placeholder="Search help articles...">
+        </div>
+    </section>
+
+    <section class="help-grid">
+        <a th:href="@{/settings}" class="help-card">
+            <i class="fa-solid fa-user-lock"></i>
+            <h3>Account &amp; Security</h3>
+            <p>Recover your account, change password, update email or secure your profile.</p>
+        </a>
+        <a th:href="@{/chat}" class="help-card">
+            <i class="fa-regular fa-comment-dots"></i>
+            <h3>Messenger</h3>
+            <p>Learn how to send messages, photos, voice notes and manage conversations.</p>
+        </a>
+        <a th:href="@{/create-post}" class="help-card">
+            <i class="fa-regular fa-image"></i>
+            <h3>Posts &amp; Stories</h3>
+            <p>Create posts, upload stories, edit content and manage visibility settings.</p>
+        </a>
+        <a th:href="@{/friends}" class="help-card">
+            <i class="fa-solid fa-user-group"></i>
+            <h3>Friends &amp; Privacy</h3>
+            <p>Manage friend requests, block users, control privacy and audience settings.</p>
+        </a>
+    </section>
+
+    <section class="faq-section">
+        <div class="section-title">
+            <h2>Frequently Asked Questions</h2>
+            <p>Quick answers to the most common Socialo questions.</p>
+        </div>
+        <div class="faq-list">
+            <details class="faq-item" open>
+                <summary>How do I change my password?</summary>
+                <p>Go to Settings → Change Password, enter your current password, then choose a new secure password and save.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Why can't I send messages?</summary>
+                <p>Make sure your internet connection is active and the other user has not blocked you. Try refreshing the messenger page.</p>
+            </details>
+            <details class="faq-item">
+                <summary>How do I report a fake account?</summary>
+                <p>Open the user's profile, tap the three-dot menu and select Report, or use the Report / Complaint page from the menu.</p>
+            </details>
+            <details class="faq-item">
+                <summary>Can I edit or delete a post later?</summary>
+                <p>Yes. Open the post, tap the three-dot menu (⋯) and choose Edit Post or Delete Post.</p>
+            </details>
+        </div>
+    </section>
+
+    <section class="support-section">
+        <div class="support-card">
+            <div class="support-text">
+                <h2>Still need help?</h2>
+                <p>Our support team is here to help you with account recovery, privacy concerns, technical issues and community safety.</p>
+            </div>
+            <div class="support-actions">
+                <a th:href="@{/report}" class="outline-btn">
+                    <i class="fa-regular fa-circle-exclamation"></i> Report an Issue
+                </a>
+                <a th:href="@{/chat}" class="primary-btn">
+                    <i class="fa-regular fa-comment-dots"></i> Contact Support
+                </a>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Poppins',sans-serif;min-height:100vh;background:#02161b;
+             display:flex;align-items:center;justify-content:center;color:#fff;padding:16px;}
+        .orb{position:absolute;border-radius:50%;filter:blur(24px);opacity:.7;}
+        .orb1{width:220px;height:220px;background:#1d4ed8;top:-80px;left:-80px;}
+        .orb2{width:180px;height:180px;background:#7c3aed;bottom:-60px;right:-60px;}
+        .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);
+              border-radius:28px;padding:40px 32px;width:100%;max-width:400px;
+              backdrop-filter:blur(20px);position:relative;z-index:2;}
+        .logo-row{display:flex;align-items:center;gap:12px;margin-bottom:28px;justify-content:center;}
+        .logo-row img{width:44px;}
+        .logo-row h1{font-size:1.7rem;font-weight:800;}
+        .badge{background:rgba(255,176,0,.2);color:#ffb000;border:1px solid rgba(255,176,0,.3);
+               padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;letter-spacing:.5px;
+               display:inline-block;margin-bottom:20px;}
+        h2{font-size:1.45rem;margin-bottom:6px;}
+        p.sub{color:#8da2a8;font-size:.88rem;margin-bottom:24px;line-height:1.5;}
+        .alert-error{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);
+                     color:#fca5a5;padding:12px 16px;border-radius:12px;margin-bottom:18px;
+                     font-size:.88rem;text-align:center;}
+        .field{background:rgba(8,24,30,.76);border:1px solid rgba(255,255,255,.08);
+               border-radius:16px;height:54px;display:flex;align-items:center;
+               gap:12px;padding:0 16px;margin-bottom:14px;}
+        .field i{color:#00e5d4;font-size:1rem;}
+        .field input{background:transparent;border:none;outline:none;color:#fff;
+                     font-size:.95rem;font-family:inherit;flex:1;}
+        .field input::placeholder{color:#6b7f87;}
+        .btn{width:100%;background:#1d4ed8;border:none;border-radius:14px;height:50px;
+             color:#fff;font-size:1rem;font-weight:700;cursor:pointer;margin-top:8px;
+             font-family:inherit;transition:.2s;}
+        .btn:hover{background:#2563eb;}
+        .back{display:block;text-align:center;margin-top:18px;color:#64748b;
+              font-size:.88rem;text-decoration:none;}
+        .back:hover{color:#00e5d4;}
+        .info{background:rgba(0,229,212,.08);border:1px solid rgba(0,229,212,.2);
+              border-radius:12px;padding:12px 14px;margin-top:20px;font-size:.8rem;
+              color:#8da2a8;line-height:1.6;}
+    </style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="card">
+    <div class="logo-row">
+        <img th:src="@{/images/socialo-logo.png}" alt="Logo">
+        <h1>Socialo</h1>
+    </div>
+    <div style="text-align:center;">
+        <span class="badge">ADMIN PANEL</span>
+    </div>
+    <h2>Admin Login</h2>
+    <p class="sub">This area is restricted. Only authorized administrators may access this panel.</p>
+
+    <div th:if="${error}" class="alert-error" th:text="${error}"></div>
+
+    <form th:action="@{/admin/login}" method="post">
+        <div class="field">
+            <i class="fa-solid fa-envelope"></i>
+            <input type="text" name="emailOrPhone" placeholder="Admin Email or Phone" required>
+        </div>
+        <div class="field">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" name="password" placeholder="Password" required>
+        </div>
+        <button type="submit" class="btn">
+            <i class="fa-solid fa-shield-halved"></i> Access Admin Panel
+        </button>
+    </form>
+
+    <div class="info">
+        <i class="fa-solid fa-circle-info" style="color:#00e5d4;"></i>
+        Access requires MODERATOR, ADMIN, or SUPER_ADMIN role. Normal users will be denied.
+    </div>
+
+    <a th:href="@{/login}" class="back">
+        <i class="fa-solid fa-arrow-left"></i> Back to User Login
+    </a>
+</div>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friends - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/friends.css}">
+</head>
+<body>
+
+<header class="topbar">
+    <a th:href="@{/home}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1>Friends</h1>
+    <a th:href="@{/search}" class="theme-btn" title="Find friends"><i class="fa-solid fa-magnifying-glass"></i></a>
+</header>
+
+<main class="friends-wrapper">
+
+    <!-- Flash messages -->
+    <div th:if="${success}" style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:12px 16px;border-radius:14px;margin-bottom:14px;font-size:.9rem;" th:text="${success}"></div>
+    <div th:if="${error}" style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 16px;border-radius:14px;margin-bottom:14px;font-size:.9rem;" th:text="${error}"></div>
+
+    <!-- ===== PENDING REQUESTS ===== -->
+    <section class="friends-section" th:if="${!#lists.isEmpty(pendingRequests)}">
+        <div class="section-header">
+            <h2>Friend Requests</h2>
+            <span class="count" th:text="${#lists.size(pendingRequests) + ' requests'}">0 requests</span>
+        </div>
+        <div class="friends-grid">
+            <th:block th:each="request : ${pendingRequests}">
+                <div class="friend-card request">
+                    <img th:src="${request.sender.displayProfileImage}" th:alt="${request.sender.fullName}">
+                    <div class="friend-info">
+                        <h3 th:text="${request.sender.fullName}">Name</h3>
+                        <p th:text="${'@' + (request.sender.username != null ? request.sender.username : 'user')}">@user</p>
+                        <div class="friend-actions">
+                            <form th:action="@{/friends/accept/{id}(id=${request.id})}" method="post" style="display:inline;">
+                                <button type="submit" class="primary-btn">Accept</button>
+                            </form>
+                            <form th:action="@{/friends/reject/{id}(id=${request.id})}" method="post" style="display:inline;">
+                                <button type="submit" class="secondary-btn">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+        </div>
+    </section>
+
+    <!-- ===== YOUR FRIENDS ===== -->
+    <section class="friends-section">
+        <div class="section-header">
+            <h2>Your Friends</h2>
+            <span class="count" th:text="${#lists.size(friends) + ' friends'}">0 friends</span>
+        </div>
+
+        <th:block th:if="${#lists.isEmpty(friends)}">
+            <div style="text-align:center;padding:32px;background:#fff;border-radius:20px;">
+                <i class="fa-solid fa-user-group" style="font-size:2.5rem;color:#cbd5e1;margin-bottom:12px;display:block;"></i>
+                <h3 style="color:#64748b;font-size:1rem;">No friends yet</h3>
+                <a th:href="@{/search}" style="display:inline-block;margin-top:12px;background:#1d4ed8;color:#fff;border-radius:12px;padding:8px 20px;text-decoration:none;font-size:.9rem;font-weight:600;">
+                    Find Friends
+                </a>
+            </div>
+        </th:block>
+
+        <div class="friends-grid" th:if="${!#lists.isEmpty(friends)}">
+            <th:block th:each="friend : ${friends}">
+                <div class="friend-card">
+                    <img th:src="${friend.displayProfileImage}" th:alt="${friend.fullName}">
+                    <div class="friend-info">
+                        <h3 th:text="${friend.fullName}">Name</h3>
+                        <p th:text="${'@' + (friend.username != null ? friend.username : 'user')}">@user</p>
+                        <div class="friend-actions">
+                            <form th:action="@{/chat/create}" method="post" style="display:inline;">
+                                <input type="hidden" name="targetUserId" th:value="${friend.id}">
+                                <button type="submit" class="message-btn">
+                                    <i class="fa-regular fa-comment-dots"></i> Message
+                                </button>
+                            </form>
+                            <form th:action="@{/friends/remove/{id}(id=${friend.id})}" method="post" style="display:inline;" onsubmit="return confirm('Remove friend?')">
+                                <button type="submit" class="secondary-btn">
+                                    <i class="fa-solid fa-user-minus"></i> Remove
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+        </div>
+    </section>
+
+    <!-- ===== SENT REQUESTS ===== -->
+    <section class="friends-section" th:if="${!#lists.isEmpty(sentRequests)}">
+        <div class="section-header">
+            <h2>Sent Requests</h2>
+        </div>
+        <div class="friends-grid">
+            <th:block th:each="request : ${sentRequests}">
+                <div class="friend-card">
+                    <img th:src="${request.receiver.displayProfileImage}" th:alt="${request.receiver.fullName}">
+                    <div class="friend-info">
+                        <h3 th:text="${request.receiver.fullName}">Name</h3>
+                        <p>Request Pending...</p>
+                        <div class="friend-actions">
+                            <form th:action="@{/friends/cancel/{id}(id=${request.receiver.id})}" method="post" style="display:inline;">
+                                <button type="submit" class="secondary-btn">Cancel</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+        </div>
+    </section>
+
+    <!-- ===== SUGGESTIONS ===== -->
+    <section class="friends-section" th:if="${!#lists.isEmpty(suggestions)}">
+        <div class="section-header">
+            <h2>People You May Know</h2>
+        </div>
+        <div class="friends-grid">
+            <th:block th:each="suggestion : ${suggestions}">
+                <div class="friend-card suggestion">
+                    <img th:src="${suggestion.displayProfileImage}" th:alt="${suggestion.fullName}">
+                    <div class="friend-info">
+                        <h3 th:text="${suggestion.fullName}">Name</h3>
+                        <p th:text="${'@' + (suggestion.username != null ? suggestion.username : 'user')}">@user</p>
+                        <div class="friend-actions">
+                            <form th:action="@{/friends/request/{id}(id=${suggestion.id})}" method="post" style="display:inline;">
+                                <button type="submit" class="primary-btn">
+                                    <i class="fa-solid fa-user-plus"></i> Add Friend
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </th:block>
+        </div>
+    </section>
+
+</main>
+
+</body>
+</html>

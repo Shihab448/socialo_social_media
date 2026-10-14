@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appeal Suspension - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .doc-upload{border:2px dashed rgba(255,255,255,.15);border-radius:18px;padding:20px;
+            text-align:center;cursor:pointer;transition:.2s;}
+        .doc-upload:hover{border-color:rgba(255,176,0,.5);background:rgba(255,176,0,.05);}
+        .doc-preview{max-width:100%;max-height:200px;border-radius:12px;margin-top:12px;display:none;}
+        .char-count{font-size:.75rem;text-align:right;margin-top:4px;}
+        .doc-types{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+        .doc-type-badge{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+            border-radius:20px;padding:4px 12px;font-size:.75rem;color:#8da2a8;}
+    </style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="orb orb4"></div>
+
+<div class="container">
+    <div class="logo-section">
+        <img th:src="@{/images/socialo-logo.png}" alt="Socialo" class="logo">
+        <h1>Socialo</h1>
+    </div>
+
+    <div class="card">
+        <div style="text-align:center;margin-bottom:16px;">
+            <i class="fa-solid fa-scale-balanced" style="font-size:2.2rem;color:#ffb000;"></i>
+        </div>
+        <h2 style="text-align:center;margin-bottom:6px;">Appeal your suspension</h2>
+        <p style="color:#8da2a8;font-size:.85rem;text-align:center;margin-bottom:22px;line-height:1.6;">
+            Explain why this decision was a mistake.<br>
+            You <strong>must</strong> upload a valid ID to verify your identity.
+        </p>
+
+        <div th:if="${error}"
+             style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;
+                    padding:12px;border-radius:14px;margin-bottom:16px;font-size:.88rem;"
+             th:text="${error}"></div>
+        <div th:if="${success}"
+             style="background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.4);color:#86efac;
+                    padding:12px;border-radius:14px;margin-bottom:16px;font-size:.88rem;"
+             th:text="${success}"></div>
+
+        <form th:action="@{/appeal}" method="post" enctype="multipart/form-data" id="appealForm">
+
+            <!-- Message -->
+            <div style="margin-bottom:16px;">
+                <label style="font-size:.82rem;color:#8da2a8;display:block;margin-bottom:6px;">
+                    Your appeal message <span style="color:#ef4444;">*</span>
+                    <span style="font-size:.75rem;">(minimum 50 characters)</span>
+                </label>
+                <div style="background:rgba(8,24,30,.76);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px;">
+                    <textarea name="message" id="appealMsg" rows="6" required minlength="50"
+                              oninput="updateCharCount()"
+                              style="width:100%;background:transparent;border:none;outline:none;
+                                     color:#fff;font-size:.9rem;font-family:inherit;resize:none;"
+                              placeholder="Explain clearly why you believe your account was wrongly suspended. Provide as much detail as possible — what happened, when, and why you think it was a mistake..."></textarea>
+                </div>
+                <div class="char-count">
+                    <span id="charCount" style="color:#8da2a8;">0</span> / 50 min
+                    <span id="charOk" style="color:#86efac;display:none;"> ✓</span>
+                </div>
+            </div>
+
+            <!-- Document Upload -->
+            <div style="margin-bottom:20px;">
+                <label style="font-size:.82rem;color:#8da2a8;display:block;margin-bottom:8px;">
+                    Identity Document <span style="color:#ef4444;">*</span>
+                    <span style="font-size:.75rem;">(required for verification)</span>
+                </label>
+
+                <label class="doc-upload" for="docInput">
+                    <i class="fa-solid fa-id-card" style="font-size:1.8rem;color:#ffb000;margin-bottom:8px;display:block;"></i>
+                    <strong style="color:#e2e8f0;font-size:.9rem;">Click to upload your ID document</strong>
+                    <p style="color:#6b7280;font-size:.78rem;margin-top:4px;">Photo or scan of your identity document</p>
+                    <input type="file" id="docInput" name="documentImage"
+                           accept="image/*,.pdf" required hidden
+                           onchange="previewDoc(this)">
+                </label>
+
+                <img id="docPreview" class="doc-preview" alt="Document preview">
+                <p id="docFileName" style="color:#8da2a8;font-size:.78rem;text-align:center;margin-top:6px;display:none;"></p>
+
+                <div class="doc-types">
+                    <span class="doc-type-badge"><i class="fa-solid fa-id-card"></i> NID Card</span>
+                    <span class="doc-type-badge"><i class="fa-solid fa-graduation-cap"></i> Student ID</span>
+                    <span class="doc-type-badge"><i class="fa-solid fa-car"></i> Driving Licence</span>
+                    <span class="doc-type-badge"><i class="fa-solid fa-certificate"></i> Birth Certificate</span>
+                </div>
+            </div>
+
+            <button type="submit" class="login-btn" id="submitBtn"
+                    style="background:#ffb000;opacity:.5;" disabled>
+                <span>Submit Appeal</span>
+                <span class="arrow"><i class="fa-solid fa-chevron-right"></i></span>
+            </button>
+
+        </form>
+
+        <div class="footer" style="margin-top:20px;">
+            <p><a th:href="@{/login}"
+                  style="color:#00e5d4;text-decoration:none;">
+                <i class="fa-solid fa-arrow-left"></i> Back to Login
+            </a></p>
+        </div>
+    </div>
+</div>
+
+<script>
+let msgOk = false;
+let docOk = false;
+
+function updateCharCount() {
+    const val   = document.getElementById('appealMsg').value;
+    const count = val.length;
+    document.getElementById('charCount').textContent = count;
+    msgOk = count >= 50;
+    document.getElementById('charOk').style.display = msgOk ? 'inline' : 'none';
+    document.getElementById('charCount').style.color = msgOk ? '#86efac' : '#8da2a8';
+    checkReady();
+}
+
+function previewDoc(input) {
+    if (!input.files[0]) return;
+    docOk = true;
+    const file = input.files[0];
+    document.getElementById('docFileName').textContent = file.name;
+    document.getElementById('docFileName').style.display = 'block';
+    if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.getElementById('docPreview');
+            img.src = e.target.result;
+            img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+    checkReady();
+}
+
+function checkReady() {
+    const btn = document.getElementById('submitBtn');
+    const ready = msgOk && docOk;
+    btn.disabled = !ready;
+    btn.style.opacity = ready ? '1' : '.5';
+}
+
+document.getElementById('appealForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span><i class="fa-solid fa-circle-notch fa-spin"></i> Submitting...</span>';
+});
+</script>
+
+</body>
+</html>

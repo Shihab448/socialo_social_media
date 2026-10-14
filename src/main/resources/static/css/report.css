@@ -1,0 +1,370 @@
+*{
+       margin:0;
+       padding:0;
+       box-sizing:border-box;
+   }
+
+body{
+    font-family:'Poppins',sans-serif;
+    background:#f4f7fb;
+    color:#111827;
+    min-height:100vh;
+}
+
+/* ================= NAVBAR ================= */
+
+.navbar{
+    position:sticky;
+    top:0;
+    z-index:1000;
+
+    height:72px;
+
+    background:#fff;
+
+    display:flex;
+    align-items:center;
+
+    padding:0 20px;
+
+    border-bottom:1px solid #e5e7eb;
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    text-decoration:none;
+    color:#111827;
+
+    font-weight:800;
+    font-size:1.15rem;
+}
+
+.logo{
+    width:38px;
+    height:38px;
+    object-fit:contain;
+}
+
+/* ================= PAGE ================= */
+
+.report-page{
+    display:flex;
+    justify-content:center;
+
+    padding:32px 16px 48px;
+}
+
+.report-card{
+    width:100%;
+    max-width:760px;
+
+    background:#fff;
+
+    border:1px solid #e5e7eb;
+    border-radius:32px;
+
+    padding:32px;
+
+    box-shadow:0 10px 32px rgba(15,23,42,.06);
+}
+
+/* ================= HEADER ================= */
+
+.card-header{
+    text-align:center;
+    margin-bottom:32px;
+}
+
+.icon-box{
+    width:74px;
+    height:74px;
+
+    margin:0 auto 18px;
+
+    border-radius:24px;
+
+    background:#fef2f2;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    color:#dc2626;
+    font-size:2rem;
+}
+
+.card-header h1{
+    font-size:2rem;
+    font-weight:800;
+
+    margin-bottom:10px;
+}
+
+.card-header p{
+    color:#64748b;
+    line-height:1.7;
+}
+
+/* ================= FORM ================= */
+
+.report-form{
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+}
+
+.field-group label{
+    display:block;
+
+    margin-bottom:10px;
+
+    font-weight:600;
+    color:#0f172a;
+}
+
+.input-box{
+    height:56px;
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:0 16px;
+
+    background:#f8fafc;
+
+    border:1px solid #e2e8f0;
+    border-radius:16px;
+}
+
+.input-box i{
+    color:#64748b;
+    min-width:20px;
+}
+
+.input-box input,
+.input-box select{
+    flex:1;
+
+    border:none;
+    outline:none;
+
+    background:transparent;
+
+    font-size:.95rem;
+    color:#111827;
+}
+
+.textarea-box{
+    background:#f8fafc;
+
+    border:1px solid #e2e8f0;
+    border-radius:20px;
+
+    padding:14px 16px;
+}
+
+.textarea-box textarea{
+    width:100%;
+
+    border:none;
+    outline:none;
+    resize:vertical;
+
+    background:transparent;
+
+    font-family:inherit;
+    font-size:.95rem;
+
+    color:#111827;
+    line-height:1.7;
+}
+
+/* ================= PRIORITY ================= */
+
+.priority-group{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+}
+
+.priority-item{
+    position:relative;
+}
+
+.priority-item input{
+    display:none;
+}
+
+.priority-item span{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+
+    min-width:110px;
+    height:46px;
+
+    padding:0 18px;
+
+    border-radius:14px;
+
+    background:#f8fafc;
+
+    border:1px solid #e2e8f0;
+
+    font-weight:600;
+    cursor:pointer;
+
+    transition:.2s ease;
+}
+
+.priority-item input:checked + span{
+    background:#2563eb;
+    border-color:#2563eb;
+    color:#fff;
+}
+
+/* ================= UPLOAD ================= */
+
+.upload-box{
+    height:140px;
+
+    border:2px dashed #cbd5e1;
+    border-radius:24px;
+
+    background:#f8fafc;
+
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+
+    cursor:pointer;
+
+    transition:.2s ease;
+}
+
+.upload-box:hover{
+    border-color:#2563eb;
+    background:#eff6ff;
+}
+
+.upload-box i{
+    font-size:2rem;
+    color:#2563eb;
+}
+
+.upload-box span{
+    color:#475569;
+    font-weight:500;
+}
+
+/* ================= ACTIONS ================= */
+
+.form-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:12px;
+
+    margin-top:8px;
+}
+
+.cancel-btn,
+.submit-btn{
+    height:50px;
+
+    padding:0 22px;
+
+    border-radius:14px;
+
+    font-weight:600;
+
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+
+    text-decoration:none;
+
+    transition:.2s ease;
+}
+
+.cancel-btn{
+    background:#f1f5f9;
+    color:#334155;
+}
+
+.submit-btn{
+    border:none;
+
+    background:#dc2626;
+    color:#fff;
+
+    cursor:pointer;
+}
+
+.submit-btn:hover{
+    background:#b91c1c;
+    transform:translateY(-1px);
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width:768px){
+
+    .report-card{
+        padding:24px;
+        border-radius:24px;
+    }
+
+    .card-header h1{
+        font-size:1.7rem;
+    }
+
+    .priority-group{
+        flex-direction:column;
+    }
+
+    .priority-item span{
+        width:100%;
+    }
+
+    .form-actions{
+        flex-direction:column;
+    }
+
+    .cancel-btn,
+    .submit-btn{
+        width:100%;
+    }
+}
+
+@media (max-width:480px){
+
+    .navbar{
+        padding:0 14px;
+    }
+
+    .report-page{
+        padding:18px 10px 36px;
+    }
+
+    .report-card{
+        padding:20px;
+        border-radius:20px;
+    }
+
+    .card-header h1{
+        font-size:1.5rem;
+    }
+
+    .icon-box{
+        width:64px;
+        height:64px;
+        font-size:1.7rem;
+    }
+}

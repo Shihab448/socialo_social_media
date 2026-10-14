@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        .role-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:700;letter-spacing:.4px;}
+        .role-USER       {background:rgba(100,116,139,.15);color:#94a3b8;}
+        .role-MODERATOR  {background:rgba(99,102,241,.15);color:#818cf8;}
+        .role-ADMIN      {background:rgba(245,158,11,.15);color:#fbbf24;}
+        .role-SUPER_ADMIN{background:rgba(239,68,68,.15);color:#f87171;}
+        .role-select{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);
+                     color:#e2e8f0;border-radius:8px;padding:4px 8px;font-size:.78rem;font-family:inherit;}
+        .section-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+        .tab-btn{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);
+                 color:#9ca3af;border-radius:10px;padding:8px 16px;cursor:pointer;
+                 font-size:.85rem;font-family:inherit;transition:.15s;}
+        .tab-btn.active,.tab-btn:hover{background:rgba(29,78,216,.25);color:#93c5fd;border-color:rgba(29,78,216,.4);}
+        .tab-content{display:none;}
+        .tab-content.active{display:block;}
+    </style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<div class="dashboard">
+
+    <!-- Topbar -->
+    <header class="topbar">
+        <div class="brand">
+            <img th:src="@{/images/socialo-logo.png}" alt="Socialo Logo" class="logo">
+            <div class="brand-text">
+                <h1>Socialo Admin</h1>
+                <p>
+                    Logged in as
+                    <strong th:text="${adminUser.fullName}">Admin</strong>
+                    &mdash;
+                    <span class="role-badge"
+                          th:classappend="${'role-' + adminUser.role}"
+                          th:text="${adminUser.role}">ADMIN</span>
+                </p>
+            </div>
+        </div>
+        <a th:href="@{/admin/logout}" class="logout-btn">
+            <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </a>
+    </header>
+
+    <!-- Flash messages -->
+    <div th:if="${success}" style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:#86efac;padding:12px 20px;border-radius:14px;margin-bottom:16px;" th:text="${success}"></div>
+    <div th:if="${error}"   style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#fca5a5;padding:12px 20px;border-radius:14px;margin-bottom:16px;" th:text="${error}"></div>
+
+    <!-- Stats -->
+    <section class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon teal"><i class="fa-solid fa-users"></i></div>
+            <div><h2 th:text="${totalUsers}">0</h2><p>Total Users</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon pink"><i class="fa-solid fa-user-check"></i></div>
+            <div><h2 th:text="${activeUsers}">0</h2><p>Active</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon yellow"><i class="fa-solid fa-user-slash"></i></div>
+            <div><h2 th:text="${blockedUsers}">0</h2><p>Blocked</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div><h2 th:text="${totalReports}">0</h2><p>Reports</p></div>
+        </div>
+    </section>
+
+    <!-- Tabs -->
+    <div class="section-tabs">
+        <button class="tab-btn active" onclick="showTab('users')">
+            <i class="fa-solid fa-users"></i> Users
+        </button>
+        <button class="tab-btn" onclick="showTab('reports')">
+            <i class="fa-solid fa-flag"></i> Reports
+            <span th:if="${openReports > 0}"
+                  th:text="${'(' + openReports + ')'}"
+                  style="color:#f87171;margin-left:4px;font-weight:700;"></span>
+        </button>
+        <button class="tab-btn" onclick="showTab('appeals')">
+            <i class="fa-solid fa-scale-balanced"></i> Appeals
+            <span th:if="${pendingAppeals > 0}"
+                  th:text="${'(' + pendingAppeals + ')'}"
+                  style="color:#fbbf24;margin-left:4px;font-weight:700;"></span>
+        </button>
+        <button th:if="${adminUser.isSuperAdmin()}" class="tab-btn" onclick="showTab('roles')">
+            <i class="fa-solid fa-shield-halved"></i> Role Management
+        </button>
+    </div>
+
+    <!-- ===== USERS TAB ===== -->
+    <div class="tab-content active glass-card" id="tab-users">
+        <div class="section-header">
+            <h2><i class="fa-solid fa-address-book"></i> User Accounts</h2>
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="userSearch" placeholder="Search user..." oninput="filterTable(this.value,'userTable')">
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Contact</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:if="${#lists.isEmpty(users)}">
+                        <td colspan="5" style="text-align:center;padding:32px;color:rgba(255,255,255,.4);">No users</td>
+                    </tr>
+                    <tr th:each="u : ${users}">
+                        <td>
+                            <div class="user-cell">
+                                <img th:src="${u.displayProfileImage}" alt="User">
+                                <div>
+                                    <strong th:text="${u.fullName}">Name</strong>
+                                    <span th:text="${'Joined ' + #temporals.format(u.createdAt, 'MMM yyyy')}">Joined</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td th:text="${u.email != null ? u.email : u.phone}">Contact</td>
+                        <td>
+                            <span class="role-badge"
+                                  th:classappend="${'role-' + u.role}"
+                                  th:text="${u.role}">USER</span>
+                        </td>
+                        <td>
+                            <span th:class="${u.isBlocked() ? 'badge blocked' : 'badge active'}"
+                                  th:text="${u.isBlocked() ? 'Blocked' : 'Active'}">Active</span>
+                        </td>
+                        <td>
+                            <th:block th:if="${!u.isBlocked() and !u.isSuperAdmin()}">
+                                <form th:action="@{/admin/block/{id}(id=${u.id})}" method="post" style="display:inline;">
+                                    <button type="submit" class="btn danger">
+                                        <i class="fa-solid fa-ban"></i> Block
+                                    </button>
+                                </form>
+                            </th:block>
+                            <th:block th:if="${u.isBlocked()}">
+                                <form th:action="@{/admin/unblock/{id}(id=${u.id})}" method="post" style="display:inline;">
+                                    <button type="submit" class="btn success">
+                                        <i class="fa-solid fa-check"></i> Unblock
+                                    </button>
+                                </form>
+                            </th:block>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== REPORTS TAB ===== -->
+    <div class="tab-content glass-card reports-section" id="tab-reports" style="display:none;">
+        <div class="section-header">
+            <h2><i class="fa-solid fa-flag"></i> Reports &amp; Complaints</h2>
+            <span class="report-count" th:text="${openReports + ' Open'}">0 Open</span>
+        </div>
+        <th:block th:if="${#lists.isEmpty(reports)}">
+            <p style="text-align:center;padding:32px;color:rgba(255,255,255,.4);font-size:.9rem;">No reports</p>
+        </th:block>
+        <div class="reports-grid">
+            <th:block th:each="report : ${reports}">
+                <div class="report-card">
+                    <div class="report-top">
+                        <div>
+                            <h3 th:text="${report.category}">Category</h3>
+                            <p>By <strong th:text="${report.reporter.fullName}">Reporter</strong></p>
+                        </div>
+                        <span class="time" th:text="${#temporals.format(report.createdAt,'MMM d, HH:mm')}">Time</span>
+                    </div>
+                    <p class="message"
+                       th:text="${report.description != null ? #strings.abbreviate(report.description,140) : 'No description'}">
+                    </p>
+                    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                        <span th:text="${report.status}"
+                              th:style="${report.status == 'OPEN' ? 'background:rgba(239,68,68,.15);color:#f87171;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:600;' :
+                                         (report.status == 'RESOLVED' ? 'background:rgba(34,197,94,.15);color:#86efac;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:600;' :
+                                         'background:rgba(100,116,139,.15);color:#94a3b8;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:600;')}">
+                        </span>
+                        <th:block th:if="${report.status == 'OPEN'}">
+                            <form th:action="@{/admin/report/resolve/{id}(id=${report.id})}" method="post" style="display:inline;">
+                                <button type="submit" class="btn success" style="padding:5px 12px;font-size:.78rem;">
+                                    Resolve
+                                </button>
+                            </form>
+                            <form th:action="@{/admin/report/dismiss/{id}(id=${report.id})}" method="post" style="display:inline;">
+                                <button type="submit" class="btn" style="padding:5px 12px;font-size:.78rem;background:rgba(255,255,255,.08);color:#9ca3af;border:none;border-radius:8px;cursor:pointer;">
+                                    Dismiss
+                                </button>
+                            </form>
+                        </th:block>
+                    </div>
+                </div>
+            </th:block>
+        </div>
+    </div>
+
+    <!-- ===== APPEALS TAB ===== -->
+    <div class="tab-content glass-card" id="tab-appeals" style="display:none;">
+        <div class="section-header">
+            <h2><i class="fa-solid fa-scale-balanced"></i> Suspension Appeals</h2>
+            <span class="report-count" th:text="${pendingAppeals + ' Pending'}">0 Pending</span>
+        </div>
+        <th:block th:if="${#lists.isEmpty(appeals)}">
+            <p style="text-align:center;padding:32px;color:rgba(255,255,255,.4);font-size:.9rem;">No appeals</p>
+        </th:block>
+        <div class="reports-grid">
+            <th:block th:each="appeal : ${appeals}">
+                <div class="report-card">
+                    <div class="report-top">
+                        <div>
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                                <img th:src="${appeal.user.displayProfileImage}" th:alt="${appeal.user.fullName}"
+                                     style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+                                <div>
+                                    <strong th:text="${appeal.user.fullName}">User</strong>
+                                    <p style="font-size:.75rem;color:rgba(255,255,255,.5);"
+                                       th:text="${appeal.user.email}">email</p>
+                                </div>
+                            </div>
+                        </div>
+                        <span class="time" th:text="${#temporals.format(appeal.createdAt,'MMM d, HH:mm')}">Time</span>
+                    </div>
+                    <p class="message" th:text="${#strings.abbreviate(appeal.message, 200)}">Message</p>
+                    <!-- Document image -->
+                    <th:block th:if="${appeal.documentImage != null}">
+                        <div style="margin:10px 0;">
+                            <a th:href="${appeal.documentImage}" target="_blank"
+                               style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);
+                                      border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 12px;
+                                      text-decoration:none;color:#e2e8f0;font-size:.8rem;">
+                                <i class="fa-solid fa-id-card" style="color:#ffb000;"></i>
+                                View Identity Document
+                            </a>
+                            <img th:src="${appeal.documentImage}" alt="Document"
+                                 style="display:block;max-width:200px;max-height:140px;border-radius:10px;margin-top:8px;object-fit:contain;background:#000;">
+                        </div>
+                    </th:block>
+                    <span th:text="${appeal.status}"
+                          th:style="${appeal.status.name() == 'PENDING' ? 'background:rgba(245,158,11,.15);color:#fbbf24;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:600;' :
+                                     (appeal.status.name() == 'APPROVED' ? 'background:rgba(34,197,94,.15);color:#86efac;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:600;' :
+                                     'background:rgba(239,68,68,.15);color:#f87171;padding:3px 10px;border-radius:8px;font-size:.75rem;font-weight:600;')}">
+                    </span>
+                    <th:block th:if="${appeal.status.name() == 'PENDING'}">
+                        <div style="margin-top:12px;">
+                            <form th:action="@{/admin/appeal/approve/{id}(id=${appeal.id})}" method="post" style="display:inline;">
+                                <input type="hidden" name="adminNote" value="Appeal approved.">
+                                <button type="submit" class="btn success" style="padding:6px 14px;font-size:.8rem;"
+                                        onclick="return confirm('Approve and restore this account?')">
+                                    Approve
+                                </button>
+                            </form>
+                            <form th:action="@{/admin/appeal/reject/{id}(id=${appeal.id})}" method="post" style="display:inline;margin-left:8px;">
+                                <input type="hidden" name="adminNote" value="Appeal reviewed and rejected.">
+                                <button type="submit" class="btn danger" style="padding:6px 14px;font-size:.8rem;"
+                                        onclick="return confirm('Reject this appeal?')">
+                                    Reject
+                                </button>
+                            </form>
+                        </div>
+                    </th:block>
+                    <th:block th:if="${appeal.adminNote != null and !#strings.isEmpty(appeal.adminNote)}">
+                        <p style="font-size:.78rem;color:rgba(255,255,255,.45);margin-top:6px;">
+                            Admin note: <span th:text="${appeal.adminNote}"></span>
+                        </p>
+                    </th:block>
+                </div>
+            </th:block>
+        </div>
+    </div>
+
+    <!-- ===== ROLE MANAGEMENT TAB (SUPER_ADMIN only) ===== -->
+    <div th:if="${adminUser.isSuperAdmin()}"
+         class="tab-content glass-card" id="tab-roles" style="display:none;">
+        <div class="section-header">
+            <h2><i class="fa-solid fa-shield-halved"></i> Role Management</h2>
+            <span style="color:#94a3b8;font-size:.82rem;">Only SUPER_ADMIN can change roles</span>
+        </div>
+
+        <p style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:16px;line-height:1.6;">
+            Use this panel to promote users to MODERATOR or ADMIN roles.
+            You cannot create another SUPER_ADMIN here for security.
+        </p>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email / Phone</th>
+                        <th>Current Role</th>
+                        <th>Change Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="u : ${users}" th:if="${!u.isSuperAdmin() and !u.getId().equals(adminUser.getId())}">
+                        <td>
+                            <div class="user-cell">
+                                <img th:src="${u.displayProfileImage}" alt="User">
+                                <div><strong th:text="${u.fullName}">Name</strong></div>
+                            </div>
+                        </td>
+                        <td th:text="${u.email != null ? u.email : u.phone}">Contact</td>
+                        <td>
+                            <span class="role-badge"
+                                  th:classappend="${'role-' + u.role}"
+                                  th:text="${u.role}">USER</span>
+                        </td>
+                        <td>
+                            <form th:action="@{/admin/role/set}" method="post" style="display:inline-flex;gap:6px;align-items:center;">
+                                <input type="hidden" name="targetUserId" th:value="${u.id}">
+                                <select name="newRole" class="role-select">
+                                    <option value="USER"      th:selected="${u.role.name() == 'USER'}">USER</option>
+                                    <option value="MODERATOR" th:selected="${u.role.name() == 'MODERATOR'}">MODERATOR</option>
+                                    <option value="ADMIN"     th:selected="${u.role.name() == 'ADMIN'}">ADMIN</option>
+                                </select>
+                                <button type="submit" class="btn success" style="padding:5px 12px;font-size:.78rem;">
+                                    Set
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <th:block th:if="${u.role.name() != 'USER'}">
+                                <form th:action="@{/admin/role/demote/{id}(id=${u.id})}" method="post"
+                                      onsubmit="return confirm('Demote to USER?')">
+                                    <button type="submit" class="btn danger" style="padding:5px 12px;font-size:.78rem;">
+                                        Demote
+                                    </button>
+                                </form>
+                            </th:block>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => { t.style.display='none'; t.classList.remove('active'); });
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    const el = document.getElementById('tab-'+name);
+    if(el){ el.style.display='block'; el.classList.add('active'); }
+    event.currentTarget.classList.add('active');
+}
+function filterTable(q, tableId) {
+    document.querySelectorAll('#'+tableId+' tbody tr').forEach(r => {
+        r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+    });
+}
+</script>
+
+</body>
+</html>

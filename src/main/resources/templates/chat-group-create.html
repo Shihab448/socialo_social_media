@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Group - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/chat.css}">
+    <style>
+        .create-group-page{max-width:540px;margin:0 auto;padding:24px 16px;}
+        .group-card{background:#fff;border-radius:20px;padding:24px;box-shadow:0 4px 20px rgba(15,23,42,.05);margin-bottom:16px;}
+        .friend-check{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6;cursor:pointer;}
+        .friend-check input[type=checkbox]{width:18px;height:18px;accent-color:#1d4ed8;cursor:pointer;}
+        .friend-check img{width:42px;height:42px;border-radius:50%;object-fit:cover;}
+        .group-input{width:100%;border:1px solid #e2e8f0;border-radius:14px;padding:12px 16px;font-size:.95rem;font-family:inherit;outline:none;margin-bottom:14px;}
+        .group-input:focus{border-color:#1d4ed8;}
+        .create-btn{width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:14px;padding:14px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;}
+    </style>
+</head>
+<body>
+<header style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:100;">
+    <a th:href="@{/chat}" style="color:#111827;text-decoration:none;font-size:1.1rem;">
+        <i class="fa-solid fa-arrow-left"></i>
+    </a>
+    <h2 style="font-size:1rem;font-weight:700;">New Group Chat</h2>
+    <div></div>
+</header>
+
+<div class="create-group-page">
+    <div class="group-card">
+        <form th:action="@{/chat/group/create}" method="post" enctype="multipart/form-data">
+
+            <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:6px;">Group Name *</label>
+            <input type="text" name="groupName" class="group-input" placeholder="Enter group name" required>
+
+            <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:10px;">Add Friends *</label>
+            <p style="font-size:.8rem;color:#6b7280;margin-bottom:10px;">Select at least 2 people to create a group.</p>
+
+            <th:block th:if="${#lists.isEmpty(friends)}">
+                <p style="color:#94a3b8;font-size:.88rem;text-align:center;padding:20px;">
+                    You need friends to create a group.
+                    <a th:href="@{/friends}" style="color:#1d4ed8;font-weight:600;">Find friends</a>
+                </p>
+            </th:block>
+
+            <th:block th:each="friend : ${friends}">
+                <label class="friend-check">
+                    <input type="checkbox" name="memberIds" th:value="${friend.id}">
+                    <img th:src="${friend.displayProfileImage}" th:alt="${friend.fullName}">
+                    <div>
+                        <strong th:text="${friend.fullName}" style="font-size:.9rem;display:block;"></strong>
+                        <span th:text="${'@' + (friend.username != null ? friend.username : 'user')}"
+                              style="font-size:.78rem;color:#6b7280;"></span>
+                    </div>
+                </label>
+            </th:block>
+
+            <th:block th:if="${!#lists.isEmpty(friends)}">
+                <button type="submit" class="create-btn" style="margin-top:18px;">
+                    <i class="fa-solid fa-users"></i> Create Group
+                </button>
+            </th:block>
+
+        </form>
+    </div>
+</div>
+</body>
+</html>

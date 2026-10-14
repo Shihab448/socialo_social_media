@@ -1,0 +1,36 @@
+body{
+    margin:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    background:#030a0d;
+    color:white;
+    font-family:Poppins,sans-serif;
+}
+
+.splash{
+    text-align:center;
+}
+
+.logo{
+    width:180px;
+    height:180px;
+    border-radius:30px;
+    animation:zoom 1.5s ease-in-out infinite alternate;
+}
+
+h1{
+    margin-top:18px;
+    font-size:38px;
+}
+
+p{
+    color:#9fb7c2;
+    font-size:16px;
+}
+
+@keyframes zoom{
+    from{transform:scale(1);}
+    to{transform:scale(1.08);}
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photos - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/photos.css}">
+</head>
+<body>
+
+<header class="topbar">
+    <a th:href="@{/profile}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1>Photos</h1>
+    <a th:href="@{/create-post}" class="theme-btn" title="Add Photo"><i class="fa-solid fa-plus"></i></a>
+</header>
+
+<main class="photos-wrapper">
+
+    <div class="page-header">
+        <div>
+            <h2>Your Photos</h2>
+            <p th:text="${#lists.size(photos) + ' photos'}">0 photos</p>
+        </div>
+        <a th:href="@{/create-post}" class="upload-btn">
+            <i class="fa-solid fa-plus"></i> Add Photo
+        </a>
+    </div>
+
+    <!-- Empty state -->
+    <th:block th:if="${#lists.isEmpty(photos)}">
+        <div style="text-align:center;padding:60px 24px;">
+            <i class="fa-regular fa-image" style="font-size:3rem;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+            <h3 style="color:#64748b;font-weight:600;">No photos yet</h3>
+            <p style="color:#94a3b8;font-size:.9rem;">Create a post with an image to see photos here.</p>
+            <a th:href="@{/create-post}" style="display:inline-block;margin-top:16px;background:#1d4ed8;color:#fff;border-radius:12px;padding:10px 22px;text-decoration:none;font-weight:600;font-size:.9rem;">
+                Upload Photo
+            </a>
+        </div>
+    </th:block>
+
+    <div class="photo-grid" th:if="${!#lists.isEmpty(photos)}">
+        <th:block th:each="photo : ${photos}">
+            <div class="photo-card">
+                <img th:src="${photo.mediaUrl}" th:alt="Photo" loading="lazy">
+            </div>
+        </th:block>
+    </div>
+
+</main>
+
+</body>
+</html>

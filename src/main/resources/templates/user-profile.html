@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${user.fullName + ' - Socialo'}">User Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user-profile.css}">
+    <link rel="stylesheet" th:href="@{/css/cover-fix.css}">
+</head>
+<body>
+
+<header class="navbar">
+    <a th:href="@{/home}" class="brand">
+        <i class="fa-solid fa-arrow-left back-icon"></i>
+        <img th:src="@{/images/socialo-logo.png}" alt="Socialo" class="brand-logo">
+        <span>Socialo</span>
+    </a>
+</header>
+
+<main class="profile-page">
+
+    <div th:if="${success}" style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:12px 20px;border-radius:14px;margin:12px;font-size:.9rem;" th:text="${success}"></div>
+    <div th:if="${error}"   style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 20px;border-radius:14px;margin:12px;font-size:.9rem;" th:text="${error}"></div>
+
+    <section class="cover-section">
+        <div class="cover-photo">
+            <img th:src="${user.displayCoverImage}" alt="Cover">
+        </div>
+
+        <div class="profile-header">
+            <div class="profile-avatar-wrap">
+                <img th:src="${user.displayProfileImage}" class="profile-avatar" alt="Profile">
+            </div>
+
+            <div class="profile-main">
+                <div class="profile-name-row">
+                    <div>
+                        <h1 th:text="${user.fullName}">Name</h1>
+                        <p class="username"
+                           th:text="${'@' + (user.username != null ? user.username : 'user')}">@user</p>
+                    </div>
+                    <span th:if="${user.profileLocked}"
+                          style="background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);border-radius:20px;padding:4px 12px;font-size:.78rem;font-weight:700;display:flex;align-items:center;gap:6px;">
+                        <i class="fa-solid fa-lock"></i> Profile Locked
+                    </span>
+                </div>
+
+                <p class="bio" th:if="${user.bio != null}" th:text="${user.bio}">Bio</p>
+
+                <div class="profile-stats">
+                    <div class="stat"><strong th:text="${postCount}">0</strong><span>Posts</span></div>
+                    <div class="stat"><strong th:text="${friendCount}">0</strong><span>Friends</span></div>
+                    <div class="stat"><strong th:text="${followerCount}">0</strong><span>Followers</span></div>
+                    <div class="stat"><strong th:text="${followingCount}">0</strong><span>Following</span></div>
+                </div>
+
+                <div class="profile-actions">
+
+                    <!-- Friend button states -->
+                    <th:block th:if="${relationshipStatus == 'FRIENDS'}">
+                        <span class="primary-btn" style="opacity:.75;cursor:default;">
+                            <i class="fa-solid fa-user-check"></i> Friends
+                        </span>
+                        <form th:action="@{/friends/remove/{id}(id=${user.id})}" method="post" style="display:inline;"
+                              onsubmit="return confirm('Remove friend?')">
+                            <button type="submit" class="secondary-btn">
+                                <i class="fa-solid fa-user-minus"></i> Remove Friend
+                            </button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${relationshipStatus == 'REQUEST_SENT'}">
+                        <form th:action="@{/friends/cancel/{id}(id=${user.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="secondary-btn">
+                                <i class="fa-solid fa-clock"></i> Cancel Request
+                            </button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${relationshipStatus == 'REQUEST_RECEIVED'}">
+                        <span class="secondary-btn" style="cursor:default;">Respond to Request</span>
+                    </th:block>
+                    <th:block th:if="${relationshipStatus == 'NONE'}">
+                        <form th:action="@{/friends/request/{id}(id=${user.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="primary-btn">
+                                <i class="fa-solid fa-user-plus"></i> Add Friend
+                            </button>
+                        </form>
+                    </th:block>
+
+                    <!-- Follow / Unfollow -->
+                    <th:block th:if="${isFollowing}">
+                        <form th:action="@{/unfollow/{id}(id=${user.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="secondary-btn">
+                                <i class="fa-solid fa-user-minus"></i> Unfollow
+                            </button>
+                        </form>
+                    </th:block>
+                    <th:block th:if="${!isFollowing}">
+                        <form th:action="@{/follow/{id}(id=${user.id})}" method="post" style="display:inline;">
+                            <button type="submit" class="secondary-btn">
+                                <i class="fa-solid fa-user-plus"></i> Follow
+                            </button>
+                        </form>
+                    </th:block>
+
+                    <!-- Message -->
+                    <form th:action="@{/chat/create}" method="post" style="display:inline;">
+                        <input type="hidden" name="targetUserId" th:value="${user.id}">
+                        <button type="submit" class="secondary-btn">
+                            <i class="fa-regular fa-comment-dots"></i> Message
+                        </button>
+                    </form>
+
+                    <!-- Report -->
+                    <a th:href="@{/report/{id}(id=${user.id})}"
+                       style="color:#ef4444;border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:8px 16px;text-decoration:none;font-size:.88rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+                        <i class="fa-regular fa-flag"></i> Report
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Content -->
+    <div class="profile-content">
+        <aside class="profile-sidebar">
+            <div class="info-card">
+                <h3>About</h3>
+                <ul class="info-list">
+                    <li th:if="${user.location != null and !#strings.isEmpty(user.location)}">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span th:text="${'Lives in ' + user.location}">Location</span>
+                    </li>
+                    <li th:if="${user.university != null and !#strings.isEmpty(user.university)}">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                        <span th:text="${user.university}">University</span>
+                    </li>
+                    <li th:if="${user.work != null and !#strings.isEmpty(user.work)}">
+                        <i class="fa-solid fa-briefcase"></i>
+                        <span th:text="${user.work}">Work</span>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <section class="profile-feed">
+            <th:block th:if="${#lists.isEmpty(posts)}">
+                <div style="text-align:center;padding:48px 24px;background:#fff;border-radius:24px;box-shadow:0 4px 20px rgba(15,23,42,.05);">
+                    <i class="fa-regular fa-newspaper" style="font-size:2.5rem;color:#cbd5e1;margin-bottom:12px;display:block;"></i>
+                    <h3 style="color:#64748b;">No posts yet</h3>
+                </div>
+            </th:block>
+
+            <th:block th:each="post : ${posts}">
+                <article class="post-card">
+                    <div class="post-header">
+                        <div class="post-user">
+                            <img th:src="${user.displayProfileImage}" class="mini-avatar" alt="">
+                            <div>
+                                <h4 th:text="${user.fullName}">Name</h4>
+                                <p th:text="${#temporals.format(post.createdAt, 'MMM d, yyyy')}">Date</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="post-text" th:if="${post.caption != null}" th:text="${post.caption}"></p>
+                    <th:block th:if="${post.firstImageUrl != null}">
+                        <img th:src="${post.firstImageUrl}"
+                             style="width:100%;max-height:480px;object-fit:contain;border-radius:14px;background:#f8fafc;margin-bottom:12px;display:block;"
+                             alt="Post">
+                    </th:block>
+                    <div class="post-actions">
+                        <form th:action="@{/post/react/{id}(id=${post.id})}" method="post" style="flex:1;">
+                            <button type="submit" style="width:100%;"><i class="fa-regular fa-thumbs-up"></i> Like</button>
+                        </form>
+                        <a th:href="@{/post/{id}(id=${post.id})}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#475569;font-weight:600;">
+                            <i class="fa-regular fa-comment"></i> Comment
+                        </a>
+                        <button style="flex:1;"><i class="fa-regular fa-paper-plane"></i> Share</button>
+                    </div>
+                </article>
+            </th:block>
+        </section>
+    </div>
+
+</main>
+
+</body>
+</html>

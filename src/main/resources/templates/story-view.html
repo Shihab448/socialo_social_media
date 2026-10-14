@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/story-view.css}">
+    <style>
+        .react-bar{display:flex;gap:4px;align-items:center;background:rgba(0,0,0,.4);
+            backdrop-filter:blur(8px);border-radius:30px;padding:5px 10px;}
+        .react-emoji-btn{font-size:1.35rem;cursor:pointer;border:none;background:transparent;
+            border-radius:50%;width:36px;height:36px;display:flex;align-items:center;
+            justify-content:center;transition:transform .15s;position:relative;}
+        .react-emoji-btn:hover,.react-emoji-btn:active{transform:scale(1.35) translateY(-4px);}
+        .react-emoji-btn.picked{background:rgba(255,255,255,.2);box-shadow:0 0 0 2px rgba(255,255,255,.5);}
+        .react-tip{position:absolute;bottom:calc(100%+4px);left:50%;transform:translateX(-50%);
+            background:#000;color:#fff;padding:2px 8px;border-radius:8px;font-size:.62rem;
+            font-weight:700;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;
+            font-family:'Poppins',sans-serif;}
+        .react-emoji-btn:hover .react-tip{opacity:1;}
+        /* viewers bottom sheet */
+        .viewers-overlay{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,.6);
+            display:none;align-items:flex-end;justify-content:center;}
+        .viewers-overlay.open{display:flex;}
+        .viewers-sheet{background:#1e293b;border-radius:24px 24px 0 0;padding:20px;
+            width:100%;max-width:480px;max-height:70vh;overflow-y:auto;}
+        .vs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+        .vs-header h3{font-size:.95rem;font-weight:700;color:#e2e8f0;margin:0;}
+        .vs-close{border:none;background:rgba(255,255,255,.08);color:#94a3b8;border-radius:50%;
+            width:30px;height:30px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;}
+        .viewer-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+        .viewer-row img{width:38px;height:38px;border-radius:50%;object-fit:cover;}
+        .viewer-row a{color:#e2e8f0;font-size:.87rem;font-weight:600;text-decoration:none;}
+        .viewer-row span{color:#6b7280;font-size:.74rem;display:block;}
+        @keyframes floatUp{
+            0%  {opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
+            100%{opacity:0;transform:translateX(-50%) translateY(-90px) scale(1.6);}
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════ ADD STORY PAGE ═══════ -->
+<th:block th:if="${story == null}">
+    <header style="display:flex;align-items:center;justify-content:space-between;
+                   padding:14px 20px;background:#fff;border-bottom:1px solid #e5e7eb;
+                   position:sticky;top:0;z-index:100;">
+        <a th:href="@{/home}" style="color:#111827;font-size:1.1rem;text-decoration:none;">
+            <i class="fa-solid fa-arrow-left"></i>
+        </a>
+        <h2 style="font-size:1rem;font-weight:700;">Stories</h2>
+        <div></div>
+    </header>
+    <main style="max-width:540px;margin:0 auto;padding:24px 16px;">
+        <div style="background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(15,23,42,.05);padding:24px;margin-bottom:20px;">
+            <h3 style="font-size:.95rem;font-weight:700;margin-bottom:14px;">
+                <i class="fa-solid fa-plus-circle" style="color:#7c3aed;margin-right:6px;"></i>
+                Add to your story
+            </h3>
+            <form th:action="@{/story/create}" method="post" enctype="multipart/form-data">
+                <label style="display:flex;align-items:center;gap:12px;background:#f8fafc;
+                               border:2px dashed #e2e8f0;border-radius:16px;padding:16px;cursor:pointer;margin-bottom:12px;">
+                    <i class="fa-solid fa-image" style="font-size:1.5rem;color:#7c3aed;"></i>
+                    <span id="storyFileText" style="flex:1;color:#475569;font-size:.9rem;">Choose photo or video</span>
+                    <input type="file" name="media" accept="image/*,video/*" hidden id="storyFile"
+                           onchange="document.getElementById('storyFileText').textContent=this.files[0].name">
+                </label>
+                <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:12px;margin-bottom:12px;">
+                    <input type="text" name="caption" placeholder="Add a caption (optional)"
+                           style="width:100%;border:none;background:transparent;outline:none;font-size:.9rem;font-family:inherit;">
+                </div>
+                <button type="submit"
+                        style="width:100%;background:linear-gradient(135deg,#7c3aed,#ec4899);
+                               color:#fff;border:none;border-radius:14px;padding:14px;
+                               font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                    <i class="fa-solid fa-plus"></i> Post Story
+                </button>
+            </form>
+        </div>
+        <div th:if="${myStories != null and !#lists.isEmpty(myStories)}"
+             style="background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(15,23,42,.05);padding:24px;">
+            <h3 style="font-size:.95rem;font-weight:700;margin-bottom:14px;">Your Active Stories</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:12px;">
+                <th:block th:each="s : ${myStories}">
+                    <div style="position:relative;">
+                        <a th:href="@{/story/view/{id}(id=${s.id})}">
+                            <img th:src="${s.mediaUrl != null ? s.mediaUrl : currentUser.displayProfileImage}"
+                                 alt="Story"
+                                 style="width:80px;height:80px;border-radius:14px;object-fit:cover;border:3px solid #7c3aed;">
+                        </a>
+                        <form th:action="@{/story/delete/{id}(id=${s.id})}" method="post"
+                              style="position:absolute;top:-6px;right:-6px;"
+                              onsubmit="return confirm('Delete this story?')">
+                            <button type="submit"
+                                    style="width:22px;height:22px;border-radius:50%;background:#ef4444;
+                                           border:none;color:#fff;cursor:pointer;font-size:.7rem;
+                                           display:flex;align-items:center;justify-content:center;">✕</button>
+                        </form>
+                    </div>
+                </th:block>
+            </div>
+        </div>
+    </main>
+</th:block>
+
+<!-- ═══════ VIEW SPECIFIC STORY ═══════ -->
+<th:block th:if="${story != null}">
+    <input type="hidden" id="storyId"    th:value="${story.id}">
+    <input type="hidden" id="ownerUid"   th:value="${story.user.id}">
+    <input type="hidden" id="meUid"      th:value="${currentUser.id}">
+    <input type="hidden" id="nextStoryId" th:value="${nextStoryId}">
+
+    <div class="story-page">
+        <div class="story-card">
+
+            <!-- Media -->
+            <th:block th:if="${story.mediaUrl != null and story.mediaType != 'VIDEO'}">
+                <img th:src="${story.mediaUrl}" class="story-image" alt="Story">
+            </th:block>
+            <th:block th:if="${story.mediaUrl != null and story.mediaType == 'VIDEO'}">
+                <video autoplay loop muted class="story-image" style="object-fit:cover;">
+                    <source th:src="${story.mediaUrl}" type="video/mp4">
+                </video>
+            </th:block>
+            <th:block th:if="${story.mediaUrl == null}">
+                <div class="story-image"
+                     style="background:linear-gradient(135deg,#7c3aed,#ec4899);
+                            display:flex;align-items:center;justify-content:center;">
+                    <p style="color:#fff;font-size:1.3rem;font-weight:700;text-align:center;padding:24px;"
+                       th:text="${story.caption}">Story</p>
+                </div>
+            </th:block>
+
+            <div class="story-overlay">
+
+                <!-- Progress bar -->
+                <div class="story-progress">
+                    <span class="progress active" id="progressBar"></span>
+                    <span th:if="${prevStoryId != null}" class="progress"></span>
+                    <span th:if="${nextStoryId != null}" class="progress"></span>
+                </div>
+
+                <!-- Header -->
+                <div class="story-header">
+                    <div class="story-user">
+                        <a th:href="@{/user-profile/{id}(id=${story.user.id})}">
+                            <img th:src="${story.user.displayProfileImage}"
+                                 th:alt="${story.user.fullName}"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #fff;">
+                        </a>
+                        <div>
+                            <a th:href="@{/user-profile/{id}(id=${story.user.id})}"
+                               th:text="${story.user.fullName}"
+                               style="color:#fff;font-weight:700;font-size:.88rem;text-decoration:none;display:block;"></a>
+                            <span th:text="${#temporals.format(story.createdAt,'HH:mm')}"
+                                  style="color:rgba(255,255,255,.65);font-size:.72rem;"></span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <!-- View count — owner: clickable to see viewers; others: plain text -->
+                        <th:block th:if="${isOwner}">
+                            <button onclick="document.getElementById('viewersOverlay').classList.add('open')"
+                                    style="background:rgba(0,0,0,.4);border:none;color:#fff;
+                                           border-radius:20px;padding:4px 10px;cursor:pointer;
+                                           font-size:.75rem;font-weight:600;font-family:inherit;
+                                           display:flex;align-items:center;gap:4px;">
+                                <i class="fa-regular fa-eye"></i>
+                                <span th:text="${viewCount}">0</span> views
+                            </button>
+                        </th:block>
+                        <th:block th:if="${!isOwner}">
+                            <span style="color:rgba(255,255,255,.6);font-size:.75rem;"
+                                  th:text="${viewCount + ' views'}">0 views</span>
+                        </th:block>
+                        <!-- Close -->
+                        <a th:href="@{/home}"
+                           style="background:rgba(0,0,0,.4);color:#fff;width:32px;height:32px;
+                                  border-radius:50%;display:flex;align-items:center;justify-content:center;
+                                  text-decoration:none;font-size:.9rem;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Caption overlay -->
+                <div class="story-content"
+                     th:if="${story.caption != null and !#strings.isEmpty(story.caption) and story.mediaUrl != null}">
+                    <div class="story-caption"><p th:text="${story.caption}">Caption</p></div>
+                </div>
+
+                <!-- Footer -->
+                <div class="story-footer">
+
+                    <!-- ═ Emoji reactions — shown for EVERYONE (friends and owner of OTHER stories) ═ -->
+                    <div class="react-bar" id="reactBar">
+                        <th:block th:each="em : ${ {'❤️','😂','😮','😢','🔥','👏'} }">
+                            <button class="react-emoji-btn"
+                                    th:attr="data-emoji=${em}"
+                                    onclick="doReact(this)"
+                                    type="button">
+                                <span th:text="${em}">❤️</span>
+                                <span class="react-tip"
+                                      th:text="${em == '❤️' ? 'Love' :
+                                                 em == '😂' ? 'Haha' :
+                                                 em == '😮' ? 'Wow'  :
+                                                 em == '😢' ? 'Sad'  :
+                                                 em == '🔥' ? 'Fire' : 'Clap'}">Love</span>
+                            </button>
+                        </th:block>
+                    </div>
+
+                    <!-- Owner: delete button -->
+                    <th:block th:if="${isOwner}">
+                        <form th:action="@{/story/delete/{id}(id=${story.id})}" method="post">
+                            <button type="submit"
+                                    onclick="return confirm('Delete this story?')"
+                                    style="background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.4);
+                                           color:#ef4444;border-radius:20px;padding:6px 14px;
+                                           cursor:pointer;font-size:.82rem;font-family:inherit;
+                                           display:flex;align-items:center;gap:6px;">
+                                <i class="fa-regular fa-trash-can"></i> Delete
+                            </button>
+                        </form>
+                    </th:block>
+
+                    <!-- Navigation -->
+                    <a th:if="${prevStoryId != null}"
+                       th:href="@{/story/view/{id}(id=${prevStoryId})}"
+                       style="color:#fff;background:rgba(0,0,0,.35);border-radius:50%;
+                              width:34px;height:34px;display:flex;align-items:center;
+                              justify-content:center;text-decoration:none;">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+                    <a th:if="${nextStoryId != null}"
+                       th:href="@{/story/view/{id}(id=${nextStoryId})}"
+                       style="color:#fff;background:rgba(0,0,0,.35);border-radius:50%;
+                              width:34px;height:34px;display:flex;align-items:center;
+                              justify-content:center;text-decoration:none;">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ VIEWERS PANEL (owner only) ═══════ -->
+    <div class="viewers-overlay" id="viewersOverlay" th:if="${isOwner}">
+        <div class="viewers-sheet">
+            <div class="vs-header">
+                <h3>
+                    <i class="fa-regular fa-eye" style="color:#7c3aed;margin-right:6px;"></i>
+                    Viewers <span th:text="${'(' + viewCount + ')'}"></span>
+                </h3>
+                <button class="vs-close"
+                        onclick="document.getElementById('viewersOverlay').classList.remove('open')">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <th:block th:if="${#lists.isEmpty(viewers)}">
+                <p style="color:#6b7280;font-size:.85rem;text-align:center;padding:20px 0;">
+                    No one has viewed this story yet.
+                </p>
+            </th:block>
+            <th:block th:each="view : ${viewers}">
+                <div class="viewer-row">
+                    <a th:href="@{/user-profile/{id}(id=${view.viewer.id})}">
+                        <img th:src="${view.viewer.displayProfileImage}" th:alt="${view.viewer.fullName}">
+                    </a>
+                    <div>
+                        <a th:href="@{/user-profile/{id}(id=${view.viewer.id})}"
+                           th:text="${view.viewer.fullName}">Name</a>
+                        <span th:text="${#temporals.format(view.viewedAt,'MMM d, HH:mm')}">Time</span>
+                    </div>
+                </div>
+            </th:block>
+        </div>
+    </div>
+
+</th:block>
+
+<script th:inline="javascript">
+/*<![CDATA[*/
+const STORY_ID = /*[[${story != null ? story.id : null}]]*/ null;
+const NEXT_ID  = /*[[${nextStoryId != null ? nextStoryId : null}]]*/ null;
+const IS_OWNER = /*[[${isOwner != null ? isOwner : false}]]*/ false;
+const PREV_ID  = /*[[${prevStoryId != null ? prevStoryId : null}]]*/ null;
+
+// Auto-advance after 8s
+if (STORY_ID && NEXT_ID) {
+    const bar = document.getElementById('progressBar');
+    if (bar) { bar.style.transition = 'width 8s linear'; bar.style.width = '100%'; }
+    setTimeout(() => { window.location.href = '/story/view/' + NEXT_ID; }, 8000);
+}
+
+// Reaction — works for ALL users (friends, owner viewing others' stories, everyone)
+let reacted = false;
+async function doReact(btn) {
+    if (!STORY_ID) return;
+    const emoji = btn.dataset.emoji;
+    document.querySelectorAll('.react-emoji-btn').forEach(b => b.classList.remove('picked'));
+    btn.classList.add('picked');
+    reacted = true;
+
+    // Floating emoji
+    const f = document.createElement('div');
+    f.textContent = emoji;
+    f.style.cssText = 'position:fixed;bottom:90px;left:50%;font-size:2.8rem;' +
+        'animation:floatUp .9s ease forwards;pointer-events:none;z-index:9000;';
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 950);
+
+    try {
+        await fetch('/story/react/' + STORY_ID + '?emoji=' + encodeURIComponent(emoji), {method:'POST'});
+    } catch(e) {}
+}
+
+// Close viewers panel on outside click
+const ov = document.getElementById('viewersOverlay');
+if (ov) ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' && NEXT_ID) window.location.href = '/story/view/' + NEXT_ID;
+    if (e.key === 'ArrowLeft'  && PREV_ID) window.location.href = '/story/view/' + PREV_ID;
+    if (e.key === 'Escape') window.location.href = '/home';
+});
+/*]]>*/
+</script>
+</body>
+</html>

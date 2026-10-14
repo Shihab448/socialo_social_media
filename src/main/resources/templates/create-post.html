@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Post - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/create-post.css}">
+    <style>
+        /* ── Responsive image fix (Part 6) ── */
+        .post-editor {
+            display:flex;
+            flex-direction:column;
+            height:calc(100vh - 64px);
+            overflow:hidden;
+        }
+        .post-body {
+            flex:1;
+            overflow-y:auto;
+            padding:16px;
+        }
+        .media-preview-area {
+            max-height:280px;
+            overflow:hidden;
+            border-radius:14px;
+            background:#f8fafc;
+            margin:10px 0;
+            display:none;
+            position:relative;
+        }
+        .media-preview-area img,
+        .media-preview-area video {
+            width:100%;
+            max-height:280px;
+            object-fit:contain;
+            border-radius:14px;
+            display:block;
+        }
+        .remove-media-btn {
+            position:absolute;top:8px;right:8px;
+            background:rgba(0,0,0,.55);color:#fff;
+            border:none;border-radius:50%;
+            width:28px;height:28px;
+            display:flex;align-items:center;justify-content:center;
+            cursor:pointer;font-size:.85rem;
+        }
+        .post-footer {
+            padding:12px 16px;
+            border-top:1px solid #e5e7eb;
+            background:#fff;
+            flex-shrink:0;
+        }
+        .publish-btn {
+            width:100%;
+            background:linear-gradient(135deg,#1d4ed8,#7c3aed);
+            color:#fff; border:none; border-radius:14px;
+            padding:14px; font-size:1rem; font-weight:700;
+            cursor:pointer; font-family:inherit;
+            transition:.2s ease;
+        }
+        .publish-btn:disabled {
+            opacity:.6; cursor:not-allowed;
+        }
+        .publish-btn:not(:disabled):hover {
+            filter:brightness(1.08);
+        }
+        .progress-bar {
+            height:4px; border-radius:4px;
+            background:#e5e7eb; overflow:hidden; margin-bottom:10px;
+            display:none;
+        }
+        .progress-fill {
+            height:100%; background:#1d4ed8;
+            width:0%; transition:width .3s ease;
+            animation:progress-anim 1.5s ease infinite alternate;
+        }
+        @keyframes progress-anim { from{width:20%;} to{width:80%;} }
+        .editor-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+        .action-btn {
+            display:flex;align-items:center;gap:6px;
+            border:1px solid #e2e8f0;border-radius:12px;
+            padding:8px 14px;background:#f8fafc;
+            cursor:pointer;font-size:.88rem;font-weight:600;
+            font-family:inherit;color:#374151;transition:.2s;
+        }
+        .action-btn:hover{background:#f1f5f9;}
+        @media(max-width:640px){
+            .post-editor{height:calc(100vh - 56px);}
+            .media-preview-area{max-height:200px;}
+            .media-preview-area img,.media-preview-area video{max-height:200px;}
+        }
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <a th:href="@{/home}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1>Create Post</h1>
+    <div></div>
+</header>
+
+<form th:action="@{/create-post}" method="post" enctype="multipart/form-data"
+      id="postForm" onsubmit="handleSubmit(event)">
+
+    <div class="post-editor">
+
+        <!-- Scrollable body -->
+        <div class="post-body">
+
+            <!-- User row -->
+            <div class="user-row" style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <img th:src="${currentUser.displayProfileImage}"
+                     class="avatar" th:alt="${currentUser.fullName}"
+                     style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                <div>
+                    <h3 style="font-size:.95rem;font-weight:700;" th:text="${currentUser.fullName}">Name</h3>
+                    <select name="visibility"
+                            style="border:1px solid #e2e8f0;border-radius:10px;padding:3px 10px;font-size:.8rem;font-family:inherit;margin-top:2px;">
+                        <option value="PUBLIC">🌍 Public</option>
+                        <option value="FRIENDS">👥 Friends</option>
+                        <option value="ONLY_ME">🔒 Only Me</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Error -->
+            <div th:if="${error}"
+                 style="background:#fee2e2;color:#991b1b;padding:10px 14px;border-radius:12px;margin-bottom:12px;font-size:.9rem;"
+                 th:text="${error}"></div>
+
+            <!-- Caption -->
+            <textarea name="caption" id="captionArea" rows="4"
+                      placeholder="Whats on your mind?"
+                      style="width:100%;border:none;outline:none;resize:none;font-size:1rem;font-family:inherit;color:#111827;line-height:1.6;"></textarea>
+
+            <!-- Media preview — max-height controlled, never overflows -->
+            <div class="media-preview-area" id="mediaPreviewArea">
+                <button type="button" class="remove-media-btn" onclick="removeMedia()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <div id="mediaContent"></div>
+            </div>
+
+            <!-- Location -->
+            <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:10px 14px;margin-top:10px;">
+                <i class="fa-solid fa-location-dot" style="color:#ef4444;"></i>
+                <input type="text" name="location" placeholder="Add location (optional)"
+                       style="border:none;background:transparent;outline:none;flex:1;font-size:.9rem;font-family:inherit;">
+            </div>
+
+            <!-- Action buttons -->
+            <div class="editor-actions">
+                <label class="action-btn" style="cursor:pointer;">
+                    <i class="fa-solid fa-image" style="color:#22c55e;"></i>
+                    <span>Photo</span>
+                    <input type="file" name="media" accept="image/*" multiple hidden id="photoInput"
+                           onchange="previewFiles(this)">
+                </label>
+                <label class="action-btn" style="cursor:pointer;">
+                    <i class="fa-solid fa-video" style="color:#3b82f6;"></i>
+                    <span>Video</span>
+                    <input type="file" name="media" accept="video/*" hidden id="videoInput"
+                           onchange="previewFiles(this)">
+                </label>
+                <button type="button" class="action-btn">
+                    <i class="fa-regular fa-face-smile" style="color:#f59e0b;"></i>
+                    <span>Feeling</span>
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Sticky footer with publish button -->
+        <div class="post-footer">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-fill"></div>
+            </div>
+            <button type="submit" class="publish-btn" id="publishBtn">
+                <i class="fa-solid fa-paper-plane"></i> Publish Post
+            </button>
+        </div>
+
+    </div>
+
+</form>
+
+<script>
+let selectedFiles = [];
+
+function previewFiles(input) {
+    if (!input.files || input.files.length === 0) return;
+    selectedFiles = Array.from(input.files);
+
+    const area = document.getElementById('mediaPreviewArea');
+    const content = document.getElementById('mediaContent');
+    content.innerHTML = '';
+
+    const file = selectedFiles[0];
+    const url = URL.createObjectURL(file);
+
+    if (file.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = 'Preview';
+        content.appendChild(img);
+    } else if (file.type.startsWith('video/')) {
+        const vid = document.createElement('video');
+        vid.src = url;
+        vid.controls = true;
+        content.appendChild(vid);
+    }
+
+    if (selectedFiles.length > 1) {
+        const more = document.createElement('p');
+        more.textContent = '+' + (selectedFiles.length - 1) + ' more files';
+        more.style = 'text-align:center;font-size:.82rem;color:#6b7280;padding:6px;';
+        content.appendChild(more);
+    }
+
+    area.style.display = 'block';
+}
+
+function removeMedia() {
+    selectedFiles = [];
+    document.getElementById('mediaPreviewArea').style.display = 'none';
+    document.getElementById('mediaContent').innerHTML = '';
+    document.getElementById('photoInput').value = '';
+    document.getElementById('videoInput').value = '';
+}
+
+function handleSubmit(e) {
+    const btn = document.getElementById('publishBtn');
+    const progress = document.getElementById('progressBar');
+    const caption = document.getElementById('captionArea').value.trim();
+
+    if (!caption && selectedFiles.length === 0) {
+        e.preventDefault();
+        alert('Please write something or add a photo/video.');
+        return;
+    }
+
+    // Prevent double submit
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Publishing...';
+    progress.style.display = 'block';
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+
+   *{
+       margin:0;
+       padding:0;
+       box-sizing:border-box;
+   }
+
+body{
+    font-family:'Poppins',sans-serif;
+    background:#f4f7fb;
+    color:#0b1d24;
+}
+
+.search-header{
+    position:sticky;
+    top:0;
+
+    display:flex;
+    align-items:center;
+    gap:14px;
+
+    padding:16px;
+
+    background:#fff;
+
+    border-bottom:1px solid #e2e8f0;
+}
+
+.back-btn{
+    width:44px;
+    height:44px;
+
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    background:#f1f5f9;
+
+    color:#111827;
+
+    text-decoration:none;
+}
+
+.search-input{
+    flex:1;
+
+    display:flex;
+    align-items:center;
+    gap:10px;
+
+    background:#f1f5f9;
+
+    border:1px solid #e2e8f0;
+
+    border-radius:999px;
+
+    padding:12px 16px;
+}
+
+.search-input input{
+    border:none;
+    outline:none;
+    background:transparent;
+
+    width:100%;
+
+    font-size:15px;
+}
+
+.search-page{
+    max-width:850px;
+    margin:auto;
+
+    padding:24px 16px 40px;
+}
+
+.result-section{
+    margin-bottom:34px;
+}
+
+.result-section h2{
+    margin-bottom:18px;
+}
+
+.user-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+
+    background:#fff;
+
+    border:1px solid #e2e8f0;
+
+    border-radius:20px;
+
+    padding:14px;
+
+    margin-bottom:14px;
+}
+
+.user-card img{
+    width:56px;
+    height:56px;
+
+    border-radius:50%;
+}
+
+.user-info{
+    flex:1;
+}
+
+.user-info p{
+    color:#64748b;
+    font-size:14px;
+}
+
+.user-card button{
+    padding:10px 16px;
+
+    border:none;
+    border-radius:12px;
+
+    background:#2563eb;
+
+    color:#fff;
+
+    font-weight:600;
+
+    cursor:pointer;
+}
+
+.video-card{
+    background:#fff;
+
+    border:1px solid #e2e8f0;
+
+    border-radius:22px;
+
+    overflow:hidden;
+}
+
+.video-card img{
+    width:100%;
+    display:block;
+}
+
+.video-info{
+    padding:16px;
+}
+
+.video-info p{
+    color:#64748b;
+    font-size:14px;
+    margin-top:6px;
+}
+
+@media (max-width:600px) {
+
+    .search-page {
+        padding: 18px 12px 32px;
+    }
+
+    .user-card {
+        flex-wrap: wrap;
+    }
+
+    .user-card button {
+        width: 100%;
+    }
+}

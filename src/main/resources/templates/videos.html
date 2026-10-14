@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Videos - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/videos.css}">
+</head>
+<body>
+
+<header class="topbar">
+    <a th:href="@{/profile}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1>Videos</h1>
+    <a th:href="@{/create-post}" class="theme-btn" title="Add Video"><i class="fa-solid fa-plus"></i></a>
+</header>
+
+<main class="videos-wrapper">
+
+    <div class="page-header">
+        <div>
+            <h2>Your Videos</h2>
+            <p th:text="${#lists.size(videos) + ' videos'}">0 videos</p>
+        </div>
+        <a th:href="@{/create-post}" class="upload-btn">
+            <i class="fa-solid fa-video"></i> Add Video
+        </a>
+    </div>
+
+    <!-- Empty state -->
+    <th:block th:if="${#lists.isEmpty(videos)}">
+        <div style="text-align:center;padding:60px 24px;">
+            <i class="fa-solid fa-video" style="font-size:3rem;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+            <h3 style="color:#64748b;font-weight:600;">No videos yet</h3>
+            <p style="color:#94a3b8;font-size:.9rem;">Create a post with a video to see them here.</p>
+            <a th:href="@{/create-post}" style="display:inline-block;margin-top:16px;background:#1d4ed8;color:#fff;border-radius:12px;padding:10px 22px;text-decoration:none;font-weight:600;font-size:.9rem;">
+                Upload Video
+            </a>
+        </div>
+    </th:block>
+
+    <div class="video-list" th:if="${!#lists.isEmpty(videos)}">
+        <th:block th:each="video : ${videos}">
+            <article class="video-card">
+                <div class="thumbnail">
+                    <video style="width:100%;height:180px;object-fit:cover;border-radius:14px 14px 0 0;">
+                        <source th:src="${video.mediaUrl}" type="video/mp4">
+                    </video>
+                    <div class="play-btn"><i class="fa-solid fa-play"></i></div>
+                </div>
+                <div class="video-info">
+                    <h3>Video</h3>
+                    <p th:text="${#temporals.format(video.post.createdAt, 'MMM d, yyyy')}">Date</p>
+                </div>
+            </article>
+        </th:block>
+    </div>
+
+</main>
+
+</body>
+</html>

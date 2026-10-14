@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socialo</title>
+    <link rel="stylesheet" th:href="@{/css/splash.css}">
+</head>
+<body>
+<div class="splash">
+    <img th:src="@{/images/socialo-logo.png}" class="logo" alt="Socialo">
+    <h1>Socialo</h1>
+    <p>Connect &bull; Share &bull; Inspire</p>
+</div>
+<script>
+    setTimeout(function() {
+        window.location.href = '/home';
+    }, 2200);
+</script>
+</body>
+</html>

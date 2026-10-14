@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/edit-profile.css}">
+    <!-- Cropper.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <style>
+        /* ── Crop Modal ── */
+        .crop-modal-overlay {
+            display:none; position:fixed; inset:0;
+            background:rgba(0,0,0,.82);
+            z-index:9000; align-items:center; justify-content:center;
+        }
+        .crop-modal-overlay.open { display:flex; }
+        .crop-modal {
+            background:#1a1a2e; border-radius:20px;
+            padding:20px; width:min(560px, 96vw);
+            max-height:96vh; overflow:hidden;
+            display:flex; flex-direction:column; gap:14px;
+        }
+        .crop-modal h3 { color:#fff; font-size:1rem; font-weight:700; }
+        .crop-container {
+            background:#000; border-radius:12px;
+            overflow:hidden; flex:1; min-height:0;
+            max-height:60vh;
+        }
+        .crop-container img { max-width:100%; display:block; }
+        .crop-preview-row {
+            display:flex; gap:12px; align-items:center;
+        }
+        .crop-preview-box {
+            overflow:hidden; border:2px solid #fff;
+            background:#000; border-radius:50%;
+            flex-shrink:0;
+        }
+        .crop-preview-box.cover-preview { border-radius:12px; }
+        .crop-actions { display:flex; gap:8px; flex-wrap:wrap; }
+        .crop-btn {
+            border:none; border-radius:10px; padding:9px 18px;
+            font-size:.88rem; font-weight:600; cursor:pointer;
+            font-family:inherit;
+        }
+        .crop-btn-confirm { background:#1d4ed8; color:#fff; }
+        .crop-btn-cancel  { background:#374151; color:#fff; }
+        .crop-btn-zoom    { background:#4b5563; color:#fff; }
+        .zoom-controls { display:flex; gap:6px; align-items:center; }
+        .zoom-controls input[type=range] { flex:1; }
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <a th:href="@{/profile}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+    <h2>Edit Profile</h2>
+    <button type="submit" form="editProfileForm" class="save-top">Save</button>
+</header>
+
+<main class="edit-wrapper">
+    <div class="edit-card">
+
+        <!-- Flash messages -->
+        <div th:if="${success}"
+             style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:12px 16px;border-radius:14px;margin-bottom:16px;font-size:.9rem;text-align:center;"
+             th:text="${success}"></div>
+        <div th:if="${error}"
+             style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 16px;border-radius:14px;margin-bottom:16px;font-size:.9rem;text-align:center;"
+             th:text="${error}"></div>
+
+        <!-- Cover -->
+        <div class="cover-section" style="position:relative;">
+            <img th:src="${user.displayCoverImage}" class="cover-photo" id="coverPreviewImg" alt="Cover">
+            <label style="position:absolute;bottom:12px;right:12px;background:rgba(0,0,0,.55);color:#fff;border-radius:10px;padding:7px 14px;cursor:pointer;font-size:.85rem;display:flex;align-items:center;gap:6px;">
+                <i class="fa-solid fa-camera"></i> Change Cover
+                <input type="file" accept="image/*" hidden onchange="openCropModal(this,'cover')">
+            </label>
+        </div>
+
+        <!-- Avatar -->
+        <div class="avatar-section">
+            <div class="avatar-box" style="position:relative;">
+                <img th:src="${user.displayProfileImage}" class="avatar" id="profilePreviewImg" alt="Profile">
+                <label style="position:absolute;bottom:4px;right:4px;background:#1d4ed8;color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.8rem;">
+                    <i class="fa-solid fa-camera"></i>
+                    <input type="file" accept="image/*" hidden onchange="openCropModal(this,'profile')">
+                </label>
+            </div>
+            <h2 th:text="${user.fullName}">Your Name</h2>
+            <p th:text="${'@' + (user.username != null ? user.username : 'user')}">@username</p>
+        </div>
+
+        <!-- Edit Form -->
+        <form id="editProfileForm" th:action="@{/edit-profile}" method="post"
+              enctype="multipart/form-data" class="edit-form">
+
+            <!-- Hidden cropped image data -->
+            <input type="hidden" name="croppedProfileImage" id="croppedProfileInput">
+            <input type="hidden" name="croppedCoverImage"   id="croppedCoverInput">
+
+            <div class="field-group">
+                <label>First Name</label>
+                <div class="input-box">
+                    <i class="fa-regular fa-user"></i>
+                    <input type="text" name="firstName" th:value="${user.firstName}" placeholder="First Name">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Last Name</label>
+                <div class="input-box">
+                    <i class="fa-regular fa-user"></i>
+                    <input type="text" name="lastName" th:value="${user.lastName}" placeholder="Last Name">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Bio</label>
+                <div class="textarea-box">
+                    <textarea rows="4" name="bio" th:text="${user.bio}" placeholder="Write something about yourself..."></textarea>
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Location</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <input type="text" name="location" th:value="${user.location}" placeholder="Your city or country">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>SSC School</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-school"></i>
+                    <input type="text" name="ssc" th:value="${user.ssc}" placeholder="Enter SSC school">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>HSC College</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-building-columns"></i>
+                    <input type="text" name="hsc" th:value="${user.hsc}" placeholder="Enter HSC college">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>University / Honors</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <input type="text" name="university" th:value="${user.university}" placeholder="University and department">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Work</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-briefcase"></i>
+                    <input type="text" name="work" th:value="${user.work}" placeholder="Workplace">
+                </div>
+            </div>
+            <div class="field-group">
+                <label>Relationship Status</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-heart"></i>
+                    <select name="relationship">
+                        <option value="" th:selected="${user.relationship == null}">Select</option>
+                        <option value="Single"             th:selected="${user.relationship == 'Single'}">Single</option>
+                        <option value="In a Relationship"  th:selected="${user.relationship == 'In a Relationship'}">In a Relationship</option>
+                        <option value="Married"            th:selected="${user.relationship == 'Married'}">Married</option>
+                        <option value="Prefer not to say"  th:selected="${user.relationship == 'Prefer not to say'}">Prefer not to say</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a th:href="@{/profile}" class="cancel-btn">Cancel</a>
+                <button type="submit" class="save-btn">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Changes
+                </button>
+            </div>
+
+        </form>
+    </div>
+</main>
+
+<!-- ===== CROP MODAL ===== -->
+<div class="crop-modal-overlay" id="cropModal">
+    <div class="crop-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3 id="cropModalTitle">Crop Image</h3>
+            <button type="button" onclick="closeCropModal()"
+                    style="background:transparent;border:none;color:#9ca3af;font-size:1.2rem;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <!-- Crop area -->
+        <div class="crop-container" id="cropContainer">
+            <img id="cropImage" src="" alt="Crop">
+        </div>
+
+        <!-- Zoom -->
+        <div class="zoom-controls">
+            <span style="color:#9ca3af;font-size:.82rem;white-space:nowrap;">Zoom:</span>
+            <input type="range" id="zoomSlider" min="0.1" max="3" step="0.01" value="1"
+                   oninput="setCropperZoom(this.value)">
+            <button type="button" class="crop-btn crop-btn-zoom" onclick="resetCrop()">Reset</button>
+        </div>
+
+        <!-- Preview -->
+        <div class="crop-preview-row">
+            <div class="crop-preview-box" id="cropPreviewBox"
+                 style="width:80px;height:80px;"></div>
+            <div style="flex:1;">
+                <p style="color:#9ca3af;font-size:.82rem;">
+                    Drag to reposition &bull; Pinch/scroll to zoom &bull; Preview shown on left
+                </p>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="crop-actions">
+            <button type="button" class="crop-btn crop-btn-confirm" onclick="confirmCrop()">
+                <i class="fa-solid fa-check"></i> Confirm
+            </button>
+            <button type="button" class="crop-btn crop-btn-cancel" onclick="closeCropModal()">
+                <i class="fa-solid fa-xmark"></i> Cancel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cropper.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+<script>
+let cropper = null;
+let cropMode = 'profile'; // 'profile' or 'cover'
+
+function openCropModal(input, mode) {
+    if (!input.files || !input.files[0]) return;
+    cropMode = mode;
+
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = document.getElementById('cropImage');
+        img.src = e.target.result;
+
+        // Reset previous cropper
+        if (cropper) { cropper.destroy(); cropper = null; }
+
+        // Set title and preview shape
+        const box = document.getElementById('cropPreviewBox');
+        const title = document.getElementById('cropModalTitle');
+
+        if (mode === 'profile') {
+            title.textContent = 'Crop Profile Photo';
+            box.style.borderRadius = '50%';
+            box.style.width = '80px';
+            box.style.height = '80px';
+        } else {
+            title.textContent = 'Crop Cover Photo';
+            box.classList.add('cover-preview');
+            box.style.borderRadius = '12px';
+            box.style.width = '160px';
+            box.style.height = '60px';
+        }
+
+        document.getElementById('cropModal').classList.add('open');
+
+        // Init Cropper.js
+        const aspectRatio = mode === 'profile' ? 1 : 16 / 5;
+        cropper = new Cropper(img, {
+            aspectRatio: aspectRatio,
+            viewMode: 1,
+            dragMode: 'move',
+            autoCropArea: 0.85,
+            responsive: true,
+            preview: '#cropPreviewBox',
+            ready() {
+                document.getElementById('zoomSlider').value = 1;
+            },
+            zoom(e) {
+                document.getElementById('zoomSlider').value = e.detail.ratio;
+            }
+        });
+    };
+    reader.readAsDataURL(file);
+    input.value = ''; // Reset so same file can be selected again
+}
+
+function setCropperZoom(val) {
+    if (cropper) cropper.zoomTo(parseFloat(val));
+}
+
+function resetCrop() {
+    if (cropper) { cropper.reset(); document.getElementById('zoomSlider').value = 1; }
+}
+
+function confirmCrop() {
+    if (!cropper) return;
+
+    const canvas = cropper.getCroppedCanvas({
+        width: cropMode === 'profile' ? 400 : 1200,
+        height: cropMode === 'profile' ? 400 : 375,
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
+    });
+
+    const base64 = canvas.toDataURL('image/jpeg', 0.88);
+
+    if (cropMode === 'profile') {
+        document.getElementById('croppedProfileInput').value = base64;
+        document.getElementById('profilePreviewImg').src = base64;
+    } else {
+        document.getElementById('croppedCoverInput').value = base64;
+        document.getElementById('coverPreviewImg').src = base64;
+    }
+
+    closeCropModal();
+}
+
+function closeCropModal() {
+    document.getElementById('cropModal').classList.remove('open');
+    if (cropper) { cropper.destroy(); cropper = null; }
+}
+</script>
+
+</body>
+</html>

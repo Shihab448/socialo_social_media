@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/notifications.css}">
+</head>
+<body>
+
+<header class="topbar">
+    <a th:href="@{/home}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1>Notifications</h1>
+    <form th:action="@{/notifications/read-all}" method="post">
+        <button type="submit" class="theme-btn" title="Mark all as read">
+            <i class="fa-solid fa-check-double"></i>
+        </button>
+    </form>
+</header>
+
+<main class="notifications-wrapper">
+
+    <div class="notifications-header">
+        <div class="tabs">
+            <button class="tab active">All</button>
+        </div>
+        <span th:if="${unreadCount > 0}" style="font-size:.85rem;color:#ef4444;font-weight:600;" th:text="${unreadCount + ' unread'}">0 unread</span>
+    </div>
+
+    <!-- Empty state -->
+    <th:block th:if="${#lists.isEmpty(notifications)}">
+        <div style="text-align:center;padding:60px 24px;">
+            <i class="fa-regular fa-bell" style="font-size:3rem;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+            <h3 style="color:#64748b;font-weight:600;">No notifications yet</h3>
+            <p style="color:#94a3b8;font-size:.9rem;">You'll see activity like likes, comments and friend requests here.</p>
+        </div>
+    </th:block>
+
+    <div class="notifications-list">
+
+        <th:block th:each="notif : ${notifications}">
+            <div th:class="${notif.isRead() ? 'notification-card' : 'notification-card unread'}">
+
+                <!-- Icon by type -->
+                <div th:switch="${notif.type}">
+                    <div th:case="'LIKE'" class="notification-icon like"><i class="fa-solid fa-heart"></i></div>
+                    <div th:case="'COMMENT'" class="notification-icon comment"><i class="fa-solid fa-comment"></i></div>
+                    <div th:case="'FOLLOW'" class="notification-icon follow"><i class="fa-solid fa-user-plus"></i></div>
+                    <div th:case="'FRIEND_REQUEST'" class="notification-icon friend"><i class="fa-solid fa-user-group"></i></div>
+                    <div th:case="'FRIEND_ACCEPTED'" class="notification-icon friend"><i class="fa-solid fa-user-check"></i></div>
+                    <div th:case="'MESSAGE'" class="notification-icon message"><i class="fa-solid fa-paper-plane"></i></div>
+                    <div th:case="*" class="notification-icon system"><i class="fa-solid fa-circle-info"></i></div>
+                </div>
+
+                <div class="notification-content">
+                    <h4 th:text="${notif.message}">Notification message</h4>
+                    <span class="time" th:text="${#temporals.format(notif.createdAt, 'MMM d, yyyy HH:mm')}">Time</span>
+                </div>
+
+                <div class="unread-dot" th:if="${!notif.isRead()}"></div>
+
+                <form th:action="@{/notifications/read/{id}(id=${notif.id})}" method="post">
+                    <button type="submit" title="Mark as read"
+                            style="border:none;background:transparent;cursor:pointer;color:#94a3b8;font-size:.8rem;padding:4px;"
+                            th:if="${!notif.isRead()}">
+                        ✓
+                    </button>
+                </form>
+
+            </div>
+        </th:block>
+
+    </div>
+
+</main>
+
+</body>
+</html>

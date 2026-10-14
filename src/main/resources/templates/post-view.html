@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/post-view.css}">
+    <link rel="stylesheet" th:href="@{/css/cover-fix.css}">
+    <style>
+        /* ── Reaction Picker ── */
+        .reaction-wrap{position:relative;flex:1;}
+        .reaction-picker{
+            display:none;position:absolute;bottom:48px;left:0;
+            background:#fff;border-radius:40px;padding:8px 12px;
+            box-shadow:0 8px 32px rgba(0,0,0,.18);gap:4px;z-index:300;
+            white-space:nowrap;border:1px solid #f0f0f0;
+        }
+        .reaction-wrap:hover .reaction-picker{display:flex;}
+        .reaction-emoji{
+            font-size:1.6rem;cursor:pointer;border:none;background:transparent;
+            border-radius:50%;width:42px;height:42px;
+            display:flex;align-items:center;justify-content:center;
+            transition:transform .15s ease;position:relative;
+        }
+        .reaction-emoji:hover{transform:scale(1.35) translateY(-6px);}
+        .reaction-emoji .rtip{
+            position:absolute;bottom:calc(100%+4px);left:50%;
+            transform:translateX(-50%);background:#111;color:#fff;
+            padding:2px 7px;border-radius:8px;font-size:.65rem;font-weight:700;
+            white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;
+        }
+        .reaction-emoji:hover .rtip{opacity:1;}
+        .react-btn-active{color:#1d4ed8!important;font-weight:700!important;}
+
+        /* ── Reply UI ── */
+        .reply-section{margin-top:8px;padding-left:52px;}
+        .reply-form{display:none;margin-top:8px;gap:8px;align-items:center;}
+        .reply-form.open{display:flex;}
+        .reply-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;}
+        .reply-input{flex:1;border:1px solid #e2e8f0;border-radius:20px;padding:7px 14px;font-size:.87rem;font-family:inherit;outline:none;}
+        .reply-input:focus{border-color:#1d4ed8;}
+        .reply-submit{background:#1d4ed8;color:#fff;border:none;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+        .reply-item{display:flex;gap:8px;padding:6px 0;align-items:flex-start;}
+        .reply-bubble{background:#f8fafc;border-radius:14px;padding:8px 14px;flex:1;}
+        .reply-bubble strong{font-size:.87rem;display:block;margin-bottom:2px;}
+        .reply-bubble p{font-size:.85rem;color:#374151;margin:0;}
+        .reply-meta{font-size:.74rem;color:#9ca3af;margin-top:4px;display:flex;gap:10px;}
+
+        /* ── Reaction summary ── */
+        .reaction-summary{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.83rem;color:#6b7280;padding:8px 0;border-top:1px solid #f0f4f8;}
+        .reaction-badge{display:inline-flex;align-items:center;gap:3px;background:#f3f4f6;border-radius:20px;padding:3px 10px;font-size:.79rem;}
+
+        /* Share overlay */
+        .share-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:5000;align-items:center;justify-content:center;padding:16px;}
+        .share-overlay.open{display:flex;}
+        .share-modal{background:#fff;border-radius:24px;padding:28px;width:100%;max-width:400px;}
+        .share-copy-box{display:flex;gap:8px;margin-top:12px;}
+        .share-copy-input{flex:1;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;font-size:.88rem;font-family:inherit;outline:none;}
+        .share-copy-btn{background:#1d4ed8;color:#fff;border:none;border-radius:12px;padding:10px 16px;cursor:pointer;font-family:inherit;font-weight:600;}
+    </style>
+</head>
+<body>
+
+<header class="topbar">
+    <a th:href="@{/home}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+    <h2>Post</h2>
+    <a th:href="@{/profile}" class="profile-btn">
+        <img th:src="${currentUser.displayProfileImage}" alt=""
+             style="width:38px;height:38px;border-radius:50%;object-fit:cover;">
+    </a>
+</header>
+
+<main class="post-page">
+
+    <!-- ===== POST ===== -->
+    <article class="post-card">
+
+        <div class="post-header">
+            <a th:href="${post.user.id == currentUser.id ? '/profile' : '/user-profile/' + post.user.id}"
+               class="user-link">
+                <img th:src="${post.user.displayProfileImage}" class="avatar" alt="">
+                <div class="user-info">
+                    <h3 th:text="${post.user.fullName}">Name</h3>
+                    <p>
+                        <span th:text="${'@' + (post.user.username != null ? post.user.username : 'user')}">@user</span>
+                        &bull; <span th:text="${#temporals.format(post.createdAt,'MMM d, yyyy HH:mm')}">Date</span>
+                        &bull; <span th:text="${post.visibility == 'PUBLIC' ? '🌍' : (post.visibility == 'FRIENDS' ? '👥' : '🔒')}">🌍</span>
+                    </p>
+                </div>
+            </a>
+
+            <th:block th:if="${post.user.id == currentUser.id}">
+                <div style="position:relative;">
+                    <button class="more-btn" onclick="toggleMenu(this)"><i class="fa-solid fa-ellipsis"></i></button>
+                    <div class="post-menu" style="display:none;position:absolute;right:0;top:44px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:180px;z-index:100;padding:8px;">
+                        <button onclick="document.getElementById('editPostModal').style.display='flex'"
+                                style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;background:transparent;color:#111827;border-radius:10px;font-size:.9rem;cursor:pointer;">
+                            <i class="fa-regular fa-pen-to-square"></i> Edit Post
+                        </button>
+                        <form th:action="@{/post/delete/{id}(id=${post.id})}" method="post"
+                              onsubmit="return confirm('Delete post?')">
+                            <button type="submit"
+                                    style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;background:transparent;color:#ef4444;border-radius:10px;font-size:.9rem;cursor:pointer;">
+                                <i class="fa-regular fa-trash-can"></i> Delete Post
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </th:block>
+        </div>
+
+        <p class="post-text" th:if="${post.caption != null}" th:text="${post.caption}"></p>
+
+        <p th:if="${post.location != null and !#strings.isEmpty(post.location)}"
+           style="font-size:.82rem;color:#64748b;margin-bottom:10px;">
+            <i class="fa-solid fa-location-dot"></i> <span th:text="${post.location}"></span>
+        </p>
+
+        <!-- All image sizes — contain keeps full image visible -->
+        <th:block th:if="${post.firstImageUrl != null}">
+            <img th:src="${post.firstImageUrl}" class="post-image" alt="Post">
+        </th:block>
+        <th:block th:if="${post.firstVideoUrl != null}">
+            <video controls class="post-image" style="max-height:520px;">
+                <source th:src="${post.firstVideoUrl}" type="video/mp4">
+            </video>
+        </th:block>
+
+        <!-- Reaction counts -->
+        <div class="reaction-summary" id="reaction-summary">
+            <th:block th:if="${!reactionCounts.isEmpty()}">
+                <th:block th:each="entry : ${reactionCounts}">
+                    <span class="reaction-badge">
+                        <span th:text="${entry.key == 'LIKE' ? '👍' : entry.key == 'LOVE' ? '❤️' : entry.key == 'HAHA' ? '😂' : entry.key == 'WOW' ? '😮' : entry.key == 'SAD' ? '😢' : '😡'}">👍</span>
+                        <span th:text="${entry.value}">0</span>
+                    </span>
+                </th:block>
+                <span th:text="${likeCount + ' total'}">0 total</span>
+            </th:block>
+            <th:block th:if="${reactionCounts.isEmpty()}">
+                <span th:text="${likeCount + ' reactions'}">0 reactions</span>
+                <span th:text="${#lists.size(comments) + ' comments'}">0 comments</span>
+            </th:block>
+        </div>
+
+        <!-- ===== ACTIONS ===== -->
+        <div class="post-actions">
+
+            <!-- Reaction picker -->
+            <div class="reaction-wrap">
+                <div class="reaction-picker">
+                    <th:block th:each="rtype : ${ {'LIKE','LOVE','HAHA','WOW','SAD','ANGRY'} }">
+                        <button type="button" class="reaction-emoji"
+                                th:attr="data-type=${rtype}"
+                                onclick="doReact(this.dataset.type)"
+                                th:title="${rtype}">
+                            <span th:text="${rtype == 'LIKE' ? '👍' : rtype == 'LOVE' ? '❤️' : rtype == 'HAHA' ? '😂' : rtype == 'WOW' ? '😮' : rtype == 'SAD' ? '😢' : '😡'}">👍</span>
+                            <span class="rtip" th:text="${rtype}">LIKE</span>
+                        </button>
+                    </th:block>
+                </div>
+                <button id="reactBtn"
+                        th:attr="data-current-type=${userReactionType}"
+                        th:class="${userReactionType != null ? 'react-btn-active' : ''}"
+                        onclick="doReact(null)"
+                        style="width:100%;border:none;background:transparent;padding:10px 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;font-size:.9rem;">
+                    <span id="reactLabel"
+                          th:text="${userReactionType == 'LIKE' ? '👍 Liked' : userReactionType == 'LOVE' ? '❤️ Love' : userReactionType == 'HAHA' ? '😂 Haha' : userReactionType == 'WOW' ? '😮 Wow' : userReactionType == 'SAD' ? '😢 Sad' : userReactionType == 'ANGRY' ? '😡 Angry' : '👍 Like'}">Like</span>
+                </button>
+            </div>
+
+            <button onclick="document.getElementById('commentInput').focus()"
+                    style="flex:1;border:none;background:transparent;padding:10px 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;font-size:.9rem;">
+                <i class="fa-regular fa-comment"></i> Comment
+            </button>
+
+            <!-- Share -->
+            <button onclick="openShare()" id="shareBtn"
+                    style="flex:1;border:none;background:transparent;padding:10px 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;font-size:.9rem;">
+                <i class="fa-regular fa-paper-plane"></i> Share
+            </button>
+
+            <!-- Save -->
+            <button onclick="doSave()" id="saveBtn"
+                    th:class="${isSaved ? 'react-btn-active' : ''}"
+                    style="flex:1;border:none;background:transparent;padding:10px 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;font-size:.9rem;">
+                <span id="saveLabel" th:text="${isSaved ? '🔖 Saved' : '🔖 Save'}">Save</span>
+            </button>
+
+        </div>
+
+    </article>
+
+    <!-- ===== COMMENTS + REPLIES ===== -->
+    <section class="comments-section">
+        <h3>Comments <span th:text="${'(' + #lists.size(comments) + ')'}"></span></h3>
+
+        <!-- Add comment -->
+        <form th:action="@{/post/comment/{id}(id=${post.id})}" method="post" class="comment-form">
+            <img th:src="${currentUser.displayProfileImage}" class="comment-avatar" alt="">
+            <div class="comment-input-wrap">
+                <input type="text" name="content" id="commentInput"
+                       placeholder="Write a comment..." required autocomplete="off">
+                <div class="comment-tools">
+                    <button type="submit" class="send-btn">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <th:block th:if="${#lists.isEmpty(comments)}">
+            <p style="text-align:center;padding:24px;color:#9ca3af;font-size:.9rem;">No comments yet.</p>
+        </th:block>
+
+        <th:block th:each="comment : ${comments}">
+            <div class="comment-card">
+                <a th:href="${comment.user.id == currentUser.id ? '/profile' : '/user-profile/' + comment.user.id}">
+                    <img th:src="${comment.user.displayProfileImage}" class="comment-avatar" alt="">
+                </a>
+                <div style="flex:1;">
+                    <div class="comment-bubble">
+                        <strong th:text="${comment.user.fullName}">Name</strong>
+                        <p th:text="${comment.content}">Comment</p>
+                    </div>
+                    <div class="comment-meta">
+                        <span th:text="${#temporals.format(comment.createdAt,'MMM d, HH:mm')}">Time</span>
+                        <button type="button"
+                                th:attr="data-id=${comment.id}"
+                                onclick="toggleReply('rf-' + this.dataset.id)"
+                                style="border:none;background:transparent;color:#1d4ed8;font-size:.82rem;cursor:pointer;font-weight:600;font-family:inherit;">
+                            Reply
+                        </button>
+                        <th:block th:if="${comment.user.id == currentUser.id}">
+                            <form th:action="@{/post/comment/delete/{cid}(cid=${comment.id})}" method="post"
+                                  style="display:inline;" onsubmit="return confirm('Delete?')">
+                                <input type="hidden" name="postId" th:value="${post.id}">
+                                <button type="submit"
+                                        style="border:none;background:transparent;color:#ef4444;cursor:pointer;font-size:.82rem;font-family:inherit;">
+                                    Delete
+                                </button>
+                            </form>
+                        </th:block>
+                    </div>
+
+                    <!-- Reply form -->
+                    <div th:id="${'rf-' + comment.id}" class="reply-form">
+                        <img th:src="${currentUser.displayProfileImage}" class="reply-avatar" alt="">
+                        <form th:action="@{/post/comment/reply/{pid}(pid=${post.id})}" method="post"
+                              style="display:flex;flex:1;gap:8px;align-items:center;">
+                            <input type="hidden" name="parentCommentId" th:value="${comment.id}">
+                            <input type="text" name="content" class="reply-input"
+                                   placeholder="Write a reply..." required autocomplete="off">
+                            <button type="submit" class="reply-submit">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </form>
+                        <button type="button"
+                                th:attr="data-id=${comment.id}"
+                                onclick="toggleReply('rf-' + this.dataset.id)"
+                                style="border:none;background:transparent;color:#9ca3af;cursor:pointer;font-size:.82rem;font-family:inherit;white-space:nowrap;">
+                            Cancel
+                        </button>
+                    </div>
+
+                    <!-- Replies -->
+                    <div style="margin-top:8px;padding-left:8px;"
+                         th:if="${!#lists.isEmpty(comment.replies)}">
+                        <th:block th:each="reply : ${comment.replies}">
+                            <div class="reply-item">
+                                <img th:src="${reply.user.displayProfileImage}" class="reply-avatar" alt="">
+                                <div class="reply-bubble">
+                                    <strong th:text="${reply.user.fullName}">Name</strong>
+                                    <p th:text="${reply.content}">Reply</p>
+                                    <div class="reply-meta">
+                                        <span th:text="${#temporals.format(reply.createdAt,'MMM d, HH:mm')}">Time</span>
+                                        <th:block th:if="${reply.user.id == currentUser.id}">
+                                            <form th:action="@{/post/comment/delete/{cid}(cid=${reply.id})}" method="post"
+                                                  style="display:inline;" onsubmit="return confirm('Delete?')">
+                                                <input type="hidden" name="postId" th:value="${post.id}">
+                                                <button type="submit"
+                                                        style="border:none;background:transparent;color:#ef4444;cursor:pointer;font-size:.75rem;font-family:inherit;">
+                                                    Delete
+                                                </button>
+                                            </form>
+                                        </th:block>
+                                    </div>
+                                </div>
+                            </div>
+                        </th:block>
+                    </div>
+
+                </div>
+            </div>
+        </th:block>
+
+    </section>
+
+</main>
+
+<!-- Edit Post Modal -->
+<div id="editPostModal"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:5000;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;border-radius:24px;width:100%;max-width:520px;padding:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3>Edit Post</h3>
+            <button onclick="document.getElementById('editPostModal').style.display='none'"
+                    style="border:none;background:#f1f5f9;border-radius:50%;width:36px;height:36px;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <form th:action="@{/post/edit/{id}(id=${post.id})}" method="post">
+            <textarea name="caption" rows="4" th:text="${post.caption}"
+                      style="width:100%;border:1px solid #e2e8f0;border-radius:14px;padding:14px;font-size:.95rem;font-family:inherit;resize:none;outline:none;margin-bottom:12px;"></textarea>
+            <input type="text" name="location" th:value="${post.location}" placeholder="Location"
+                   style="width:100%;border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;font-size:.9rem;font-family:inherit;outline:none;margin-bottom:12px;">
+            <select name="visibility"
+                    style="width:100%;border:1px solid #e2e8f0;border-radius:14px;padding:12px 14px;font-size:.9rem;font-family:inherit;outline:none;margin-bottom:16px;">
+                <option value="PUBLIC"  th:selected="${post.visibility == 'PUBLIC'}">🌍 Public</option>
+                <option value="FRIENDS" th:selected="${post.visibility == 'FRIENDS'}">👥 Friends</option>
+                <option value="ONLY_ME" th:selected="${post.visibility == 'ONLY_ME'}">🔒 Only Me</option>
+            </select>
+            <button type="submit"
+                    style="width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:14px;padding:13px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                Save Changes
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="share-overlay" id="shareModal">
+    <div class="share-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:1rem;font-weight:700;">Share Post</h3>
+            <button onclick="document.getElementById('shareModal').classList.remove('open')"
+                    style="border:none;background:#f1f5f9;border-radius:50%;width:32px;height:32px;cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="share-copy-box">
+            <input type="text" id="shareLinkInput" class="share-copy-input" readonly>
+            <button onclick="copyLink()" class="share-copy-btn">Copy</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+            <a id="waLink" href="#" target="_blank"
+               style="flex:1;background:#25D366;color:#fff;border-radius:12px;padding:10px;text-align:center;text-decoration:none;font-size:.85rem;font-weight:600;">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </a>
+            <a id="fbLink" href="#" target="_blank"
+               style="flex:1;background:#1877F2;color:#fff;border-radius:12px;padding:10px;text-align:center;text-decoration:none;font-size:.85rem;font-weight:600;">
+                <i class="fa-brands fa-facebook"></i> Facebook
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+const POST_ID = [[${post.id}]];
+
+// ── Menu toggle ──────────────────────────────────────────────
+function toggleMenu(btn) {
+    const m = btn.nextElementSibling;
+    m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.post-menu').forEach(m => {
+        if (!m.previousElementSibling?.contains(e.target) && !m.contains(e.target))
+            m.style.display = 'none';
+    });
+});
+
+// ── Reaction AJAX ────────────────────────────────────────────
+const EMOJIS = {LIKE:'👍',LOVE:'❤️',HAHA:'😂',WOW:'😮',SAD:'😢',ANGRY:'😡'};
+let reacting = false;
+
+async function doReact(type) {
+    if (reacting) return;
+    reacting = true;
+
+    const btn = document.getElementById('reactBtn');
+    const current = btn.dataset.currentType || null;
+    const useType = type || current || 'LIKE';
+
+    try {
+        const res  = await fetch('/post/react/' + POST_ID + '?type=' + useType, { method:'POST' });
+        const data = await res.json();
+        const label = document.getElementById('reactLabel');
+
+        if (data.reacted) {
+            btn.dataset.currentType = data.type;
+            btn.classList.add('react-btn-active');
+            label.textContent = EMOJIS[data.type] + ' ' + cap(data.type);
+        } else {
+            btn.dataset.currentType = '';
+            btn.classList.remove('react-btn-active');
+            label.textContent = '👍 Like';
+        }
+
+        // Update summary
+        const summary = document.getElementById('reaction-summary');
+        if (summary) {
+            let html = '';
+            for (const [k,v] of Object.entries(data.counts || {})) {
+                html += `<span class="reaction-badge"><span>${EMOJIS[k]||'👍'}</span><span>${v}</span></span>`;
+            }
+            if (data.count > 0) html += `<span>${data.count} total</span>`;
+            summary.innerHTML = html || '<span>0 reactions</span>';
+        }
+    } catch(e) { console.error(e); }
+    finally { reacting = false; }
+}
+
+function cap(s) { return s.charAt(0) + s.slice(1).toLowerCase(); }
+
+// ── Save AJAX ────────────────────────────────────────────────
+async function doSave() {
+    try {
+        const res  = await fetch('/post/save/' + POST_ID, { method:'POST' });
+        const data = await res.json();
+        const btn  = document.getElementById('saveBtn');
+        const lbl  = document.getElementById('saveLabel');
+        lbl.textContent = data.saved ? '🔖 Saved' : '🔖 Save';
+        btn.classList.toggle('react-btn-active', data.saved);
+    } catch(e) { console.error(e); }
+}
+
+// ── Share ────────────────────────────────────────────────────
+function openShare() {
+    const url = window.location.origin + '/post/' + POST_ID;
+    document.getElementById('shareLinkInput').value = url;
+    document.getElementById('waLink').href = 'https://wa.me/?text=' + encodeURIComponent(url);
+    document.getElementById('fbLink').href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+    document.getElementById('shareModal').classList.add('open');
+}
+function copyLink() {
+    navigator.clipboard.writeText(document.getElementById('shareLinkInput').value).then(() => {
+        const btn = document.querySelector('.share-copy-btn');
+        btn.textContent = 'Copied!'; btn.style.background = '#22c55e';
+        setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = ''; }, 2200);
+    });
+}
+
+// ── Reply toggle ─────────────────────────────────────────────
+function toggleReply(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('open');
+    if (el.classList.contains('open')) el.querySelector('input')?.focus();
+}
+</script>
+
+</body>
+</html>

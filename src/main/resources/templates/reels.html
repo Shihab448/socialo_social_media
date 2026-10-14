@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reels - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{font-family:'Poppins',sans-serif;background:#000;color:#fff;min-height:100vh;overflow-x:hidden;}
+
+        /* Top bar */
+        .reels-topbar{
+            position:fixed;top:0;left:0;right:0;z-index:100;
+            display:flex;justify-content:space-between;align-items:center;
+            padding:14px 20px;
+            background:linear-gradient(to bottom,rgba(0,0,0,.7),transparent);
+        }
+        .reels-topbar h1{font-size:1.1rem;font-weight:700;}
+        .reels-topbar a{color:#fff;text-decoration:none;font-size:1rem;}
+
+        /* Vertical scroll container */
+        .reels-feed{
+            height:100vh;
+            overflow-y:scroll;
+            scroll-snap-type:y mandatory;
+            -webkit-overflow-scrolling:touch;
+        }
+        .reels-feed::-webkit-scrollbar{display:none;}
+        .reel-item{
+            position:relative;
+            height:100vh;
+            scroll-snap-align:start;
+            display:flex;align-items:center;justify-content:center;
+            background:#111;
+        }
+        .reel-video{
+            width:100%;height:100%;
+            object-fit:contain;
+            background:#000;
+            cursor:pointer;
+        }
+        /* Overlay */
+        .reel-overlay{
+            position:absolute;inset:0;
+            display:flex;flex-direction:column;justify-content:flex-end;
+            padding:20px;
+            background:linear-gradient(to top,rgba(0,0,0,.7) 0%,transparent 60%);
+            pointer-events:none;
+        }
+        .reel-overlay *{pointer-events:auto;}
+        .reel-user{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+        .reel-user img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #fff;}
+        .reel-user a{color:#fff;font-weight:700;font-size:.95rem;text-decoration:none;}
+        .reel-caption{font-size:.88rem;color:#e5e7eb;margin-bottom:14px;line-height:1.5;max-width:80%;}
+        /* Right action bar */
+        .reel-actions{
+            position:absolute;right:14px;bottom:100px;
+            display:flex;flex-direction:column;align-items:center;gap:18px;
+        }
+        .reel-action-btn{
+            display:flex;flex-direction:column;align-items:center;gap:4px;
+            border:none;background:transparent;color:#fff;cursor:pointer;font-family:inherit;
+        }
+        .reel-action-btn i{font-size:1.5rem;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5));}
+        .reel-action-btn span{font-size:.72rem;font-weight:600;}
+        /* Play/pause indicator */
+        .play-icon{
+            position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            font-size:3rem;color:rgba(255,255,255,.8);
+            opacity:0;pointer-events:none;transition:opacity .2s;
+        }
+        .play-icon.show{opacity:1;}
+
+        /* Upload modal */
+        .upload-overlay{
+            display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);
+            z-index:500;align-items:flex-end;justify-content:center;
+        }
+        .upload-overlay.open{display:flex;}
+        .upload-sheet{
+            background:#1e293b;border-radius:24px 24px 0 0;padding:24px;
+            width:100%;max-width:540px;
+        }
+        .upload-sheet h3{font-size:1rem;font-weight:700;margin-bottom:16px;text-align:center;}
+        .reel-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);
+            border-radius:14px;padding:12px;color:#fff;font-size:.9rem;font-family:inherit;outline:none;margin-bottom:12px;}
+
+        /* Empty state */
+        .empty-reels{display:flex;flex-direction:column;align-items:center;justify-content:center;
+            height:100vh;text-align:center;padding:24px;}
+
+        @media(min-width:640px){
+            .reel-item{max-width:400px;margin:0 auto;}
+            .reels-feed{display:flex;flex-direction:column;align-items:center;}
+        }
+    </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="reels-topbar">
+    <a th:href="@{/home}"><i class="fa-solid fa-arrow-left"></i></a>
+    <h1><i class="fa-solid fa-film"></i> Reels</h1>
+    <button onclick="document.getElementById('uploadOverlay').classList.add('open')"
+            style="border:none;background:transparent;color:#fff;cursor:pointer;font-size:1.1rem;">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+</div>
+
+<!-- Reels feed -->
+<div class="reels-feed" id="reelsFeed">
+
+    <!-- Empty state -->
+    <th:block th:if="${#lists.isEmpty(reels)}">
+        <div class="empty-reels">
+            <i class="fa-solid fa-film" style="font-size:4rem;color:#374151;margin-bottom:16px;"></i>
+            <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:8px;">No Reels Yet</h2>
+            <p style="color:#6b7280;font-size:.9rem;margin-bottom:20px;">
+                Be the first to post a reel, or follow friends to see their reels here.
+            </p>
+            <button onclick="document.getElementById('uploadOverlay').classList.add('open')"
+                    style="background:#1d4ed8;color:#fff;border:none;border-radius:14px;padding:12px 28px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                <i class="fa-solid fa-plus"></i> Post a Reel
+            </button>
+        </div>
+    </th:block>
+
+    <!-- Reel items -->
+    <th:block th:each="reel,stat : ${reels}">
+        <div class="reel-item" th:id="${'reel-' + reel.id}">
+
+            <!-- Video -->
+            <th:block th:if="${reel.firstVideoUrl != null}">
+                <video class="reel-video"
+                       th:src="${reel.firstVideoUrl}"
+                       loop playsinline
+                       th:id="${'video-' + reel.id}"
+                       onclick="togglePlay(this)">
+                </video>
+                <div class="play-icon" th:id="${'playIcon-' + reel.id}">
+                    <i class="fa-solid fa-play"></i>
+                </div>
+            </th:block>
+
+            <!-- Overlay -->
+            <div class="reel-overlay">
+                <div class="reel-user">
+                    <a th:href="@{/user-profile/{id}(id=${reel.user.id})}">
+                        <img th:src="${reel.user.displayProfileImage}" th:alt="${reel.user.fullName}">
+                    </a>
+                    <a th:href="@{/user-profile/{id}(id=${reel.user.id})}"
+                       th:text="${reel.user.fullName}">Username</a>
+                    <th:block th:if="${reel.user.id != currentUser.id}">
+                        <form th:action="@{/friends/request/{id}(id=${reel.user.id})}" method="post" style="display:inline;">
+                            <button type="submit"
+                                    style="border:1px solid #fff;background:transparent;color:#fff;
+                                           border-radius:8px;padding:4px 12px;font-size:.75rem;
+                                           cursor:pointer;font-family:inherit;">
+                                Follow
+                            </button>
+                        </form>
+                    </th:block>
+                </div>
+                <p class="reel-caption" th:if="${reel.caption != null}"
+                   th:text="${reel.caption}">Caption</p>
+            </div>
+
+            <!-- Right action bar -->
+            <div class="reel-actions">
+
+                <!-- Like -->
+                <form th:action="@{/post/react/{id}(id=${reel.id})}" method="post">
+                    <button type="submit" class="reel-action-btn">
+                        <i class="fa-regular fa-heart"></i>
+                        <span th:text="${reel.likeCount}">0</span>
+                    </button>
+                </form>
+
+                <!-- Comment -->
+                <a th:href="@{/post/{id}(id=${reel.id})}" class="reel-action-btn" style="color:#fff;text-decoration:none;">
+                    <i class="fa-regular fa-comment"></i>
+                    <span th:text="${reel.commentCount}">0</span>
+                </a>
+
+                <!-- Share -->
+                <button class="reel-action-btn"
+                        th:attr="onclick='copyLink(' + ${reel.id} + ')'"
+                        type="button">
+                    <i class="fa-regular fa-paper-plane"></i>
+                    <span>Share</span>
+                </button>
+
+                <!-- Delete (own reel) -->
+                <th:block th:if="${reel.user.id == currentUser.id}">
+                    <form th:action="@{/post/delete/{id}(id=${reel.id})}" method="post"
+                          onsubmit="return confirm('Delete this reel?')">
+                        <button type="submit" class="reel-action-btn" style="color:#ef4444;">
+                            <i class="fa-regular fa-trash-can"></i>
+                            <span>Delete</span>
+                        </button>
+                    </form>
+                </th:block>
+
+            </div>
+
+        </div>
+    </th:block>
+
+</div>
+
+<!-- Upload reel modal (bottom sheet) -->
+<div class="upload-overlay" id="uploadOverlay">
+    <div class="upload-sheet">
+        <h3><i class="fa-solid fa-film"></i> Post a Reel</h3>
+        <form th:action="@{/reels/create}" method="post" enctype="multipart/form-data"
+              onsubmit="handleUpload(this)">
+            <label style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.08);
+                           border:1px dashed rgba(255,255,255,.2);border-radius:14px;padding:16px;
+                           cursor:pointer;margin-bottom:12px;">
+                <i class="fa-solid fa-video" style="font-size:1.4rem;color:#1d4ed8;"></i>
+                <span id="reelFileText" style="color:#94a3b8;font-size:.9rem;">
+                    Choose video (required)
+                </span>
+                <input type="file" name="video" accept="video/*" required hidden id="reelFile"
+                       onchange="document.getElementById('reelFileText').textContent = this.files[0].name">
+            </label>
+            <input type="text" name="caption" placeholder="Add a caption..." class="reel-input">
+            <div style="display:flex;gap:10px;">
+                <button type="button" onclick="document.getElementById('uploadOverlay').classList.remove('open')"
+                        style="flex:1;border:1px solid rgba(255,255,255,.2);background:transparent;
+                               color:#fff;border-radius:14px;padding:13px;font-size:.9rem;cursor:pointer;font-family:inherit;">
+                    Cancel
+                </button>
+                <button type="submit" id="reelSubmitBtn"
+                        style="flex:2;background:#1d4ed8;color:#fff;border:none;border-radius:14px;
+                               padding:13px;font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;">
+                    <i class="fa-solid fa-paper-plane"></i> Post Reel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// ── Auto-play first reel on load ──────────────────────────────
+window.addEventListener('load', () => {
+    const firstVideo = document.querySelector('.reel-video');
+    if (firstVideo) firstVideo.play().catch(() => {});
+});
+
+// ── Intersection Observer: play/pause on scroll ───────────────
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        const video = entry.target.querySelector('.reel-video');
+        if (!video) return;
+        if (entry.isIntersecting) {
+            video.play().catch(() => {});
+        } else {
+            video.pause();
+        }
+    });
+}, { threshold: 0.6 });
+
+document.querySelectorAll('.reel-item').forEach(item => observer.observe(item));
+
+// ── Click to play/pause ───────────────────────────────────────
+function togglePlay(video) {
+    const id   = video.id.replace('video-', '');
+    const icon = document.getElementById('playIcon-' + id);
+    if (video.paused) {
+        video.play();
+        if (icon) { icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 600); }
+    } else {
+        video.pause();
+        if (icon) { icon.classList.add('show'); setTimeout(() => icon.classList.remove('show'), 600); }
+    }
+}
+
+// ── Copy share link ───────────────────────────────────────────
+function copyLink(postId) {
+    const url = window.location.origin + '/post/' + postId;
+    navigator.clipboard.writeText(url).then(() => {
+        showToast('Link copied!');
+    });
+}
+
+// ── Toast notification ────────────────────────────────────────
+function showToast(msg) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);' +
+        'background:rgba(255,255,255,.15);backdrop-filter:blur(10px);color:#fff;' +
+        'padding:8px 20px;border-radius:20px;font-size:.85rem;z-index:9999;font-family:Poppins,sans-serif;';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2500);
+}
+
+// ── Upload form handler ───────────────────────────────────────
+function handleUpload(form) {
+    const btn = document.getElementById('reelSubmitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Uploading...';
+}
+
+// Close upload modal on outside click
+document.getElementById('uploadOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+});
+</script>
+
+</body>
+</html>

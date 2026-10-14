@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report / Complaint - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/report.css}">
+</head>
+<body>
+
+<header class="navbar">
+    <a th:href="@{/home}" class="brand">
+        <i class="fa-solid fa-arrow-left"></i>
+        <img th:src="@{/images/socialo-logo.png}" alt="Socialo Logo" class="logo">
+        <span>Socialo</span>
+    </a>
+</header>
+
+<main class="report-page">
+    <div class="report-card">
+
+        <div class="card-header">
+            <div class="icon-box"><i class="fa-regular fa-circle-exclamation"></i></div>
+            <h1>Report / Complaint</h1>
+            <p>Help us keep Socialo safe and respectful for everyone. Your report will be reviewed by our team.</p>
+        </div>
+
+        <!-- Flash messages -->
+        <div th:if="${success}" style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:12px 16px;border-radius:14px;margin-bottom:16px;font-size:.9rem;text-align:center;" th:text="${success}"></div>
+        <div th:if="${error}" style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 16px;border-radius:14px;margin-bottom:16px;font-size:.9rem;text-align:center;" th:text="${error}"></div>
+
+        <!-- Reported user info if coming from profile -->
+        <div th:if="${reportedUser != null}" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;">
+            <img th:src="${reportedUser.displayProfileImage}" th:alt="${reportedUser.fullName}"
+                 style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+            <div>
+                <strong th:text="${reportedUser.fullName}">Name</strong>
+                <p style="font-size:.85rem;color:#64748b;" th:text="${'@' + (reportedUser.username != null ? reportedUser.username : 'user')}">@user</p>
+            </div>
+        </div>
+
+        <form th:action="@{/report/submit}" method="post" class="report-form">
+
+            <!-- Hidden reported user ID -->
+            <input type="hidden" name="reportedUserId" th:value="${reportedUser != null ? reportedUser.id : null}">
+
+            <div class="field-group">
+                <label>What are you reporting?</label>
+                <div class="input-box">
+                    <i class="fa-solid fa-list"></i>
+                    <select name="category" required>
+                        <option value="">Select an option</option>
+                        <option value="FAKE_ACCOUNT">Fake Account</option>
+                        <option value="HARASSMENT">Harassment / Abuse</option>
+                        <option value="SPAM">Spam / Scam</option>
+                        <option value="INAPPROPRIATE_CONTENT">Inappropriate Content</option>
+                        <option value="ABUSIVE_MESSAGE">Abusive Message</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Priority</label>
+                <div class="priority-group">
+                    <label class="priority-item">
+                        <input type="radio" name="priority" value="NORMAL" checked>
+                        <span>Normal</span>
+                    </label>
+                    <label class="priority-item">
+                        <input type="radio" name="priority" value="IMPORTANT">
+                        <span>Important</span>
+                    </label>
+                    <label class="priority-item">
+                        <input type="radio" name="priority" value="URGENT">
+                        <span>Urgent</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="field-group">
+                <label>Describe the issue</label>
+                <div class="textarea-box">
+                    <textarea name="description" rows="6"
+                              placeholder="Explain what happened, when it happened, and why you are reporting this..."
+                              required></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a th:href="@{/home}" class="cancel-btn">Cancel</a>
+                <button type="submit" class="submit-btn">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Report
+                </button>
+            </div>
+
+        </form>
+    </div>
+</main>
+
+</body>
+</html>

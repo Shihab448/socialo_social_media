@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socialo Feed</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <style>
+        /* ── Reaction Picker ── */
+        .reaction-wrap{position:relative;flex:1;}
+        .reaction-picker{
+            display:none;position:absolute;bottom:48px;left:0;
+            background:#fff;border-radius:40px;padding:8px 12px;
+            box-shadow:0 8px 32px rgba(0,0,0,.18);gap:4px;z-index:300;
+            white-space:nowrap;border:1px solid #f0f0f0;
+        }
+        .reaction-wrap:hover .reaction-picker{display:flex;}
+        .reaction-emoji{
+            font-size:1.6rem;cursor:pointer;border:none;background:transparent;
+            border-radius:50%;width:42px;height:42px;
+            display:flex;align-items:center;justify-content:center;
+            transition:transform .15s ease;position:relative;
+        }
+        .reaction-emoji:hover{transform:scale(1.35) translateY(-6px);}
+        .reaction-emoji .rtip{
+            position:absolute;bottom:calc(100%+4px);left:50%;
+            transform:translateX(-50%);background:#111;color:#fff;
+            padding:2px 7px;border-radius:8px;font-size:.65rem;font-weight:700;
+            white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s;
+        }
+        .reaction-emoji:hover .rtip{opacity:1;}
+        .react-btn-active{color:#1d4ed8!important;font-weight:700!important;}
+
+        /* ── Post image fix ── */
+        .post-image{
+            width:100%;max-height:520px;
+            object-fit:contain;border-radius:18px;
+            background:#f8fafc;display:block;margin-bottom:14px;
+        }
+
+        /* ── Cover image height ── */
+        .cover-photo img{width:100%;height:320px;object-fit:cover;}
+        @media(max-width:640px){.cover-photo img{height:180px;}}
+
+        /* ── Share Modal ── */
+        .share-overlay{
+            display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);
+            z-index:5000;align-items:center;justify-content:center;padding:16px;
+        }
+        .share-overlay.open{display:flex;}
+        .share-modal{
+            background:#fff;border-radius:24px;padding:28px;width:100%;max-width:420px;
+        }
+        .share-copy-box{
+            display:flex;gap:8px;margin-top:12px;
+        }
+        .share-copy-input{
+            flex:1;border:1px solid #e2e8f0;border-radius:12px;
+            padding:10px 14px;font-size:.88rem;font-family:inherit;outline:none;
+        }
+        .share-copy-btn{
+            background:#1d4ed8;color:#fff;border:none;border-radius:12px;
+            padding:10px 16px;cursor:pointer;font-family:inherit;font-weight:600;
+        }
+
+        /* ── Live modal ── */
+        .live-modal{
+            display:none;position:fixed;inset:0;background:#000;
+            z-index:9000;flex-direction:column;align-items:center;justify-content:center;
+        }
+        .live-modal.open{display:flex;}
+        #liveVideo{width:100%;max-width:720px;border-radius:16px;background:#111;}
+        .live-controls{display:flex;gap:12px;margin-top:16px;}
+        .live-btn{
+            border:none;border-radius:12px;padding:12px 24px;
+            font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ========== NAVBAR ========== -->
+<header class="navbar">
+    <div class="nav-left">
+        <img th:src="@{/images/socialo-logo.png}" alt="Socialo Logo" class="logo">
+        <h1>Socialo</h1>
+        <a th:href="${currentUser != null ? '/search' : '/'}" class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Search friends, posts...</span>
+        </a>
+    </div>
+    <div class="nav-right">
+        <!-- Reels button in top nav -->
+        <a th:href="@{/reels}" class="icon-btn" title="Reels"
+           style="display:flex;align-items:center;gap:5px;padding:0 10px;width:auto;font-size:.82rem;font-weight:700;color:#374151;">
+            <i class="fa-solid fa-film" style="font-size:1rem;color:#7c3aed;"></i>
+            <span class="nav-reels-label" style="font-size:.82rem;">Reels</span>
+        </a>
+        <a th:href="@{/chat}" class="icon-btn" title="Messages">
+            <i class="fa-solid fa-comment-dots"></i>
+        </a>
+        <a th:href="@{/notifications}" class="icon-btn" style="position:relative;" title="Notifications">
+            <i class="fa-regular fa-bell"></i>
+            <span th:if="${unreadNotifications > 0}" th:text="${unreadNotifications}"
+                  style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border-radius:50%;width:18px;height:18px;font-size:.65rem;display:flex;align-items:center;justify-content:center;font-weight:700;"></span>
+        </a>
+        <div class="profile-menu">
+            <button class="profile-btn">
+                <a th:href="@{/profile}">
+                    <img th:src="${currentUser.displayProfileImage}" alt="Profile"
+                         class="profile-avatar" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #7c3aed;">
+                </a>
+            </button>
+            <div class="account-dropdown">
+                <div class="account-header">
+                    <img th:src="${currentUser.displayProfileImage}" alt="Profile" class="profile-pic">
+                    <div>
+                        <h3 th:text="${currentUser.fullName}">Name</h3>
+                        <p th:text="${'@' + (currentUser.username != null ? currentUser.username : 'user')}">@user</p>
+                    </div>
+                </div>
+                <div class="dropdown-divider"></div>
+                <a th:href="@{/profile}"><i class="fa-regular fa-user"></i><span>See profile</span></a>
+                <a th:href="@{/edit-profile}"><i class="fa-regular fa-pen-to-square"></i><span>Edit profile</span></a>
+                <a th:href="@{/settings}"><i class="fa-solid fa-gear"></i><span>Settings</span></a>
+                <a th:href="@{/saved}"><i class="fa-regular fa-bookmark"></i><span>Saved Posts</span></a>
+                <a th:href="@{/help}"><i class="fa-regular fa-circle-question"></i><span>Help Center</span></a>
+                <div class="dropdown-divider"></div>
+                <a th:href="@{/logout}" class="logout-item">
+                    <i class="fa-solid fa-right-from-bracket"></i><span>Logout</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ========== MAIN ========== -->
+<main class="main-layout">
+    <div class="feed-container">
+
+        <!-- Flash messages -->
+        <div th:if="${success}" style="background:#d1fae5;border:1px solid #6ee7b7;color:#065f46;padding:12px 16px;border-radius:14px;margin-bottom:14px;font-size:.9rem;" th:text="${success}"></div>
+        <div th:if="${error}"   style="background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:12px 16px;border-radius:14px;margin-bottom:14px;font-size:.9rem;" th:text="${error}"></div>
+
+        <!-- ===== STORIES ===== -->
+        <section class="stories-section">
+            <div class="stories-scroll">
+                <a th:href="@{/story}" class="story-card add-story">
+                    <div class="story-image add"><i class="fa-solid fa-plus"></i></div>
+                    <p>Add Story</p>
+                </a>
+                <th:block th:each="story : ${stories}">
+                    <a th:href="@{/story/view/{id}(id=${story.id})}" class="story-card friend-story">
+                        <div class="story-image">
+                            <img th:src="${story.mediaUrl != null ? story.mediaUrl : story.user.displayProfileImage}"
+                                 th:alt="${story.user.firstName}">
+                        </div>
+                        <p th:text="${story.user.firstName}">User</p>
+                    </a>
+                </th:block>
+                <div th:if="${#lists.isEmpty(stories)}"
+                     style="display:flex;align-items:center;padding:8px 16px;color:#64748b;font-size:.85rem;">
+                    No stories yet
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== PEOPLE YOU MAY KNOW ===== -->
+        <th:block th:if="${suggestions != null and !#lists.isEmpty(suggestions)}">
+            <section style="background:#fff;border-radius:24px;padding:18px;box-shadow:0 4px 20px rgba(15,23,42,.05);margin-bottom:18px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                    <h3 style="font-size:.95rem;font-weight:700;color:#0f172a;">
+                        <i class="fa-solid fa-user-group" style="color:#1d4ed8;margin-right:6px;"></i>
+                        People You May Know
+                    </h3>
+                    <a th:href="@{/friends}"
+                       style="font-size:.8rem;color:#1d4ed8;text-decoration:none;font-weight:600;">
+                        See all
+                    </a>
+                </div>
+
+                <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;
+                            -webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;
+                            scrollbar-width:thin;align-items:stretch;">
+                    <th:block th:each="suggestion : ${suggestions}">
+                        <!--
+                            Fixed height card: flexbox column so button always at bottom.
+                            All cards same width+height regardless of name length.
+                        -->
+                        <div style="flex-shrink:0;width:120px;min-height:180px;
+                                    background:#f8fafc;border-radius:18px;
+                                    border:1px solid #e2e8f0;scroll-snap-align:start;
+                                    display:flex;flex-direction:column;align-items:center;
+                                    padding:14px 8px 12px;text-align:center;">
+
+                            <!-- Profile image -->
+                            <a th:href="@{/user-profile/{id}(id=${suggestion.id})}"
+                               style="display:block;flex-shrink:0;">
+                                <img th:src="${suggestion.displayProfileImage}"
+                                     th:alt="${suggestion.fullName}"
+                                     style="width:60px;height:60px;border-radius:50%;
+                                            object-fit:cover;border:2px solid #e2e8f0;
+                                            display:block;">
+                            </a>
+
+                            <!-- Name — fixed 2-line clamp -->
+                            <a th:href="@{/user-profile/{id}(id=${suggestion.id})}"
+                               th:text="${suggestion.fullName}"
+                               style="display:block;font-size:.8rem;font-weight:700;
+                                      color:#0f172a;text-decoration:none;
+                                      margin-top:8px;margin-bottom:2px;
+                                      width:100%;
+                                      overflow:hidden;
+                                      display:-webkit-box;
+                                      -webkit-line-clamp:2;
+                                      -webkit-box-orient:vertical;
+                                      line-height:1.3;
+                                      max-height:2.6em;"></a>
+
+                            <!-- Username -->
+                            <span th:if="${suggestion.username != null}"
+                                  th:text="${'@' + suggestion.username}"
+                                  style="display:block;font-size:.7rem;color:#6b7280;
+                                         white-space:nowrap;overflow:hidden;
+                                         text-overflow:ellipsis;width:100%;
+                                         margin-bottom:4px;"></span>
+
+                            <!-- Spacer pushes button to bottom -->
+                            <div style="flex:1;"></div>
+
+                            <!-- Add Friend / Cancel button — always at bottom -->
+                            <button th:id="${'sug-btn-' + suggestion.id}"
+                                    th:attr="data-uid=${suggestion.id},
+                                             data-status=${suggestionStatus[suggestion.id]}"
+                                    onclick="toggleFriendRequest(this)"
+                                    th:text="${suggestionStatus[suggestion.id] == 'REQUEST_SENT'
+                                              ? 'Cancel' : '+ Add Friend'}"
+                                    th:style="${suggestionStatus[suggestion.id] == 'REQUEST_SENT'
+                                              ? 'width:100%;border:1px solid #d1d5db;background:#fff;color:#374151;border-radius:10px;padding:6px 4px;font-size:.73rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;'
+                                              : 'width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:10px;padding:6px 4px;font-size:.73rem;font-weight:600;cursor:pointer;font-family:inherit;margin-top:8px;'}">
+                            </button>
+                        </div>
+                    </th:block>
+                </div>
+
+                <p style="font-size:.75rem;color:#94a3b8;text-align:center;margin-top:8px;">
+                    <span th:text="${#lists.size(suggestions)}">0</span> suggestions &bull; Swipe to see more
+                </p>
+            </section>
+        </th:block>
+                </p>
+            </section>
+        </th:block>
+
+        <!-- ===== CREATE POST ===== -->
+        <section class="create-post">
+            <div class="create-top">
+                <a th:href="@{/profile}">
+                    <img th:src="${currentUser.displayProfileImage}" alt="User" class="avatar">
+                </a>
+                <input type="text" id="createPostInput"
+                       th:placeholder="${'Whats on your mind, ' + currentUser.firstName + '?'}"
+                       onclick="document.getElementById('createPostModal').style.display='flex'"
+                       readonly style="cursor:pointer;">
+            </div>
+            <div class="create-actions">
+                <!-- Live Video Button -->
+                <button onclick="openLive()">
+                    <i class="fa-solid fa-video" style="color:#ef4444;"></i> Live
+                </button>
+                <button onclick="document.getElementById('createPostModal').style.display='flex'">
+                    <i class="fa-regular fa-image" style="color:#22c55e;"></i> Photo
+                </button>
+                <button onclick="document.getElementById('createPostModal').style.display='flex'">
+                    <i class="fa-regular fa-face-smile" style="color:#f59e0b;"></i> Feeling
+                </button>
+            </div>
+        </section>
+
+        <!-- ===== CREATE POST MODAL ===== -->
+        <div id="createPostModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:5000;align-items:center;justify-content:center;padding:16px;">
+            <div style="background:#fff;border-radius:24px;width:100%;max-width:560px;padding:24px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3 style="font-size:1.1rem;font-weight:700;">Create Post</h3>
+                    <button onclick="document.getElementById('createPostModal').style.display='none'"
+                            style="border:none;background:#f1f5f9;border-radius:50%;width:36px;height:36px;cursor:pointer;font-size:1rem;">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <form th:action="@{/create-post}" method="post" enctype="multipart/form-data" onsubmit="handleModalSubmit(this)">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+                        <img th:src="${currentUser.displayProfileImage}" alt=""
+                             style="width:44px;height:44px;border-radius:50%;object-fit:cover;">
+                        <div>
+                            <strong th:text="${currentUser.fullName}">Name</strong>
+                            <select name="visibility" style="border:1px solid #e2e8f0;border-radius:8px;padding:2px 8px;font-size:.8rem;margin-left:8px;">
+                                <option value="PUBLIC">🌍 Public</option>
+                                <option value="FRIENDS">👥 Friends</option>
+                                <option value="ONLY_ME">🔒 Only Me</option>
+                            </select>
+                        </div>
+                    </div>
+                    <textarea name="caption" rows="4"
+                              style="width:100%;border:none;outline:none;resize:none;font-size:1rem;font-family:inherit;color:#111827;min-height:80px;"
+                              th:placeholder="${'Whats on your mind, ' + currentUser.firstName + '?'}"></textarea>
+
+                    <!-- Media preview — max-height so publish always visible -->
+                    <div id="modalPreviewArea" style="display:none;max-height:260px;overflow:hidden;border-radius:14px;background:#f8fafc;margin:10px 0;position:relative;">
+                        <button type="button" onclick="clearModalMedia()"
+                                style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:.8rem;z-index:2;">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <div id="modalPreviewContent"></div>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:8px 12px;margin:10px 0;">
+                        <i class="fa-solid fa-location-dot" style="color:#ef4444;"></i>
+                        <input type="text" name="location" placeholder="Add location"
+                               style="border:none;background:transparent;outline:none;flex:1;font-size:.88rem;font-family:inherit;">
+                    </div>
+
+                    <label style="display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px dashed #e2e8f0;border-radius:12px;padding:10px 14px;cursor:pointer;margin-bottom:14px;">
+                        <i class="fa-regular fa-image" style="color:#22c55e;font-size:1.1rem;"></i>
+                        <span style="font-size:.88rem;color:#475569;">Add Photo / Video</span>
+                        <input type="file" name="media" accept="image/*,video/*" multiple hidden
+                               onchange="previewModalMedia(this)">
+                    </label>
+
+                    <button type="submit" id="modalPublishBtn"
+                            style="width:100%;background:#1d4ed8;color:#fff;border:none;border-radius:14px;padding:13px;font-size:1rem;font-weight:700;cursor:pointer;transition:.2s ease;font-family:inherit;">
+                        <i class="fa-solid fa-paper-plane"></i> Publish Post
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== FEED ===== -->
+        <th:block th:if="${#lists.isEmpty(feed)}">
+            <div style="text-align:center;padding:48px 24px;background:#fff;border-radius:24px;box-shadow:0 4px 20px rgba(15,23,42,.05);">
+                <i class="fa-regular fa-newspaper" style="font-size:3rem;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+                <h3 style="color:#64748b;">No posts yet</h3>
+                <p style="color:#94a3b8;font-size:.9rem;">Add friends or follow people to see posts here.</p>
+                <a th:href="@{/friends}" style="display:inline-block;margin-top:16px;background:#1d4ed8;color:#fff;border-radius:12px;padding:10px 22px;text-decoration:none;font-weight:600;font-size:.9rem;">
+                    Find Friends
+                </a>
+            </div>
+        </th:block>
+
+        <th:block th:each="post : ${feed}">
+            <article class="post-card" th:id="${'post-' + post.id}">
+
+                <div class="post-header">
+                    <div class="post-user">
+                        <img th:src="${post.user.displayProfileImage}" alt="User" class="avatar">
+                        <div>
+                            <h3>
+                                <a th:href="@{/user-profile/{id}(id=${post.user.id})}"
+                                   th:text="${post.user.fullName}" class="user-link">User</a>
+                            </h3>
+                            <p>
+                                <span th:text="${'@' + (post.user.username != null ? post.user.username : 'user')}">@user</span>
+                                &bull; <span th:text="${#temporals.format(post.createdAt, 'MMM d')}">Date</span>
+                                &bull; <span th:text="${post.visibility == 'PUBLIC' ? '🌍' : (post.visibility == 'FRIENDS' ? '👥' : '🔒')}">🌍</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div style="position:relative;">
+                        <button class="more-btn" onclick="toggleMenu(this)"><i class="fa-solid fa-ellipsis"></i></button>
+                        <div class="post-menu" style="display:none;position:absolute;right:0;top:44px;background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:180px;z-index:100;padding:8px;">
+                            <th:block th:if="${post.user.id == currentUser.id}">
+                                <a th:href="@{/post/{id}(id=${post.id})}"
+                                   style="display:flex;align-items:center;gap:10px;padding:10px 14px;text-decoration:none;color:#111827;border-radius:10px;font-size:.9rem;">
+                                    <i class="fa-regular fa-pen-to-square"></i> Edit
+                                </a>
+                                <form th:action="@{/post/delete/{id}(id=${post.id})}" method="post"
+                                      onsubmit="return confirm('Delete post?')">
+                                    <button type="submit" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;border:none;background:transparent;color:#ef4444;border-radius:10px;font-size:.9rem;cursor:pointer;">
+                                        <i class="fa-regular fa-trash-can"></i> Delete
+                                    </button>
+                                </form>
+                            </th:block>
+                            <th:block th:if="${post.user.id != currentUser.id}">
+                                <a th:href="@{/report/{uid}(uid=${post.user.id})}"
+                                   style="display:flex;align-items:center;gap:10px;padding:10px 14px;text-decoration:none;color:#ef4444;border-radius:10px;font-size:.9rem;">
+                                    <i class="fa-regular fa-flag"></i> Report
+                                </a>
+                            </th:block>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="post-text" th:if="${post.caption != null and !#strings.isEmpty(post.caption)}"
+                   th:text="${post.caption}"></p>
+
+                <p th:if="${post.location != null and !#strings.isEmpty(post.location)}"
+                   style="font-size:.82rem;color:#64748b;margin-bottom:10px;">
+                    <i class="fa-solid fa-location-dot"></i> <span th:text="${post.location}"></span>
+                </p>
+
+                <!-- All sizes image — object-fit:contain preserves full image -->
+                <th:block th:if="${post.firstImageUrl != null}">
+                    <img th:src="${post.firstImageUrl}" class="post-image" alt="Post">
+                </th:block>
+                <th:block th:if="${post.firstVideoUrl != null}">
+                    <video controls class="post-image" style="max-height:520px;">
+                        <source th:src="${post.firstVideoUrl}" type="video/mp4">
+                    </video>
+                </th:block>
+
+                <!-- Reaction counts -->
+                <div style="display:flex;gap:6px;padding:6px 0;border-top:1px solid #f0f4f8;font-size:.82rem;color:#6b7280;"
+                     th:id="${'reaction-counts-' + post.id}">
+                    <span th:text="${post.likeCount > 0 ? post.likeCount + ' Reactions' : ''}"></span>
+                    <span th:text="${post.commentCount > 0 ? post.commentCount + ' Comments' : ''}"></span>
+                </div>
+
+                <!-- Actions -->
+                <div class="post-actions">
+
+                    <!-- Reaction with picker -->
+                    <div class="reaction-wrap">
+                        <div class="reaction-picker">
+                            <th:block th:each="rtype : ${ {'LIKE','LOVE','HAHA','WOW','SAD','ANGRY'} }">
+                                <button type="button" class="reaction-emoji"
+                                        th:attr="data-post-id=${post.id},data-type=${rtype}"
+                                        onclick="doReact(this.dataset.postId, this.dataset.type)"
+                                        th:title="${rtype}">
+                                    <span th:text="${rtype == 'LIKE' ? '👍' : rtype == 'LOVE' ? '❤️' : rtype == 'HAHA' ? '😂' : rtype == 'WOW' ? '😮' : rtype == 'SAD' ? '😢' : '😡'}">👍</span>
+                                    <span class="rtip" th:text="${rtype}">LIKE</span>
+                                </button>
+                            </th:block>
+                        </div>
+                        <button th:id="${'react-btn-' + post.id}"
+                                onclick="doReact(this.dataset.postId, null)"
+                                th:attr="data-post-id=${post.id}"
+                                style="width:100%;border:none;background:transparent;padding:10px 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;font-size:.9rem;transition:.2s;">
+                            <span th:text="'👍 Like'" th:id="${'react-label-' + post.id}">👍 Like</span>
+                        </button>
+                    </div>
+
+                    <a th:href="@{/post/{id}(id=${post.id})}"
+                       style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;color:#475569;font-weight:600;font-size:.9rem;">
+                        <i class="fa-regular fa-comment"></i> Comment
+                    </a>
+
+                    <!-- Share button -->
+                    <button onclick="openShare(this.dataset.postId, this.dataset.title)"
+                            th:attr="data-post-id=${post.id},data-title=${post.caption}"
+                            style="flex:1;border:none;background:transparent;padding:10px 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;font-size:.9rem;">
+                        <i class="fa-regular fa-paper-plane"></i> Share
+                    </button>
+
+                    <!-- Save button -->
+                    <button th:id="${'save-btn-' + post.id}"
+                            onclick="doSave(this.dataset.postId)"
+                            th:attr="data-post-id=${post.id}"
+                            style="flex:1;border:none;background:transparent;padding:10px 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;font-weight:600;color:#475569;cursor:pointer;font-family:inherit;font-size:.9rem;">
+                        <i class="fa-regular fa-bookmark"></i> Save
+                    </button>
+
+                </div>
+            </article>
+        </th:block>
+
+    </div>
+</main>
+
+<!-- ========== BOTTOM NAV ========== -->
+<nav class="bottom-nav">
+    <a th:href="@{/home}" class="active"><i class="fa-solid fa-house"></i><span>Feed</span></a>
+    <a th:href="@{/reels}"><i class="fa-solid fa-film"></i><span>Reels</span></a>
+    <a onclick="document.getElementById('createPostModal').style.display='flex'" class="upload-btn" style="cursor:pointer;">
+        <i class="fa-solid fa-plus"></i><span>Post</span>
+    </a>
+    <a th:href="@{/chat}"><i class="fa-regular fa-comment-dots"></i><span>Chat</span></a>
+    <a th:href="@{/profile}"><i class="fa-regular fa-user"></i><span>Profile</span></a>
+</nav>
+
+<!-- ========== SHARE MODAL ========== -->
+<div class="share-overlay" id="shareModal">
+    <div class="share-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+            <h3 style="font-size:1rem;font-weight:700;">Share Post</h3>
+            <button onclick="closeShare()" style="border:none;background:#f1f5f9;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:.9rem;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <p style="color:#6b7280;font-size:.88rem;margin-bottom:10px;">Copy and share this link:</p>
+        <div class="share-copy-box">
+            <input type="text" id="shareUrlInput" class="share-copy-input" readonly>
+            <button onclick="copyShareLink()" class="share-copy-btn">Copy</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+            <a id="shareWhatsApp" href="#" target="_blank"
+               style="flex:1;background:#25D366;color:#fff;border:none;border-radius:12px;padding:10px;text-align:center;text-decoration:none;font-size:.88rem;font-weight:600;">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+            </a>
+            <a id="shareFacebook" href="#" target="_blank"
+               style="flex:1;background:#1877F2;color:#fff;border:none;border-radius:12px;padding:10px;text-align:center;text-decoration:none;font-size:.88rem;font-weight:600;">
+                <i class="fa-brands fa-facebook"></i> Facebook
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ========== LIVE VIDEO MODAL ========== -->
+<div class="live-modal" id="liveModal">
+    <div style="position:absolute;top:16px;left:0;right:0;display:flex;justify-content:center;">
+        <span style="background:#ef4444;color:#fff;border-radius:20px;padding:4px 16px;font-weight:700;font-size:.85rem;letter-spacing:.5px;">
+            ● LIVE
+        </span>
+    </div>
+    <video id="liveVideo" autoplay muted playsinline></video>
+    <div class="live-controls">
+        <button class="live-btn" style="background:#ef4444;color:#fff;" onclick="stopLive()">
+            <i class="fa-solid fa-stop"></i> End Live
+        </button>
+        <button class="live-btn" style="background:#374151;color:#fff;" id="liveCamToggle"
+                onclick="toggleCamera()">
+            <i class="fa-solid fa-camera-rotate"></i> Flip
+        </button>
+        <button class="live-btn" style="background:#374151;color:#fff;" onclick="toggleMute()">
+            <i class="fa-solid fa-microphone" id="muteIcon"></i> Mute
+        </button>
+    </div>
+    <p style="color:#9ca3af;font-size:.82rem;margin-top:8px;">
+        Live video — visible to you only (full streaming requires WebRTC server)
+    </p>
+</div>
+
+<script>
+// ── Menu toggle ──────────────────────────────────────────────
+function toggleMenu(btn) {
+    const m = btn.nextElementSibling;
+    m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.post-menu').forEach(m => {
+        if (!m.previousElementSibling?.contains(e.target) && !m.contains(e.target))
+            m.style.display = 'none';
+    });
+});
+
+// ── Reaction (AJAX) ──────────────────────────────────────────
+const REACTION_EMOJIS = {LIKE:'👍',LOVE:'❤️',HAHA:'😂',WOW:'😮',SAD:'😢',ANGRY:'😡'};
+let pendingReacts = {};
+
+async function doReact(postId, type) {
+    if (pendingReacts[postId]) return;
+    pendingReacts[postId] = true;
+
+    // If no type passed (clicking main button), determine toggle
+    const btn = document.getElementById('react-btn-' + postId);
+    const currentType = btn?.dataset.currentType || null;
+
+    const useType = type || currentType || 'LIKE';
+
+    try {
+        const res = await fetch('/post/react/' + postId + '?type=' + useType, {
+            method: 'POST',
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        });
+        const data = await res.json();
+        updateReactBtn(postId, data.reacted ? data.type : null, data.count);
+    } catch(e) { console.error(e); }
+    finally { pendingReacts[postId] = false; }
+}
+
+function updateReactBtn(postId, type, count) {
+    const btn   = document.getElementById('react-btn-'   + postId);
+    const label = document.getElementById('react-label-' + postId);
+    if (!btn || !label) return;
+
+    if (type) {
+        btn.dataset.currentType = type;
+        btn.classList.add('react-btn-active');
+        label.textContent = REACTION_EMOJIS[type] + ' ' + capitalize(type);
+    } else {
+        btn.dataset.currentType = '';
+        btn.classList.remove('react-btn-active');
+        label.textContent = '👍 Like';
+    }
+
+    const countEl = document.querySelector('#reaction-counts-' + postId + ' span');
+    if (countEl && count > 0) countEl.textContent = count + ' Reactions';
+}
+
+function capitalize(s) { return s.charAt(0) + s.slice(1).toLowerCase(); }
+
+// ── Share ────────────────────────────────────────────────────
+function openShare(postId) {
+    const url = window.location.origin + '/post/' + postId;
+    document.getElementById('shareUrlInput').value = url;
+    document.getElementById('shareWhatsApp').href  = 'https://wa.me/?text=' + encodeURIComponent(url);
+    document.getElementById('shareFacebook').href  = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+    document.getElementById('shareModal').classList.add('open');
+}
+function closeShare() { document.getElementById('shareModal').classList.remove('open'); }
+function copyShareLink() {
+    const input = document.getElementById('shareUrlInput');
+    navigator.clipboard.writeText(input.value).then(() => {
+        const btn = input.nextElementSibling;
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!'; btn.style.background = '#22c55e';
+        setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+    });
+}
+
+// ── Save (AJAX) ──────────────────────────────────────────────
+async function doSave(postId) {
+    const btn = document.getElementById('save-btn-' + postId);
+    try {
+        const res  = await fetch('/post/save/' + postId, { method: 'POST' });
+        const data = await res.json();
+        if (btn) {
+            btn.innerHTML = data.saved
+                ? '<i class="fa-solid fa-bookmark" style="color:#1d4ed8;"></i> Saved'
+                : '<i class="fa-regular fa-bookmark"></i> Save';
+        }
+    } catch(e) { console.error(e); }
+}
+
+// ── Modal media preview ──────────────────────────────────────
+function previewModalMedia(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const url  = URL.createObjectURL(file);
+    const area = document.getElementById('modalPreviewArea');
+    const cont = document.getElementById('modalPreviewContent');
+    cont.innerHTML = '';
+    let el;
+    if (file.type.startsWith('image/')) {
+        el = document.createElement('img');
+        el.src = url;
+        el.style = 'width:100%;max-height:240px;object-fit:contain;border-radius:14px;display:block;';
+    } else {
+        el = document.createElement('video');
+        el.src = url; el.controls = true;
+        el.style = 'width:100%;max-height:240px;border-radius:14px;display:block;';
+    }
+    cont.appendChild(el);
+    area.style.display = 'block';
+}
+function clearModalMedia() {
+    document.getElementById('modalPreviewArea').style.display = 'none';
+    document.getElementById('modalPreviewContent').innerHTML = '';
+}
+function handleModalSubmit(form) {
+    const btn = form.querySelector('[type=submit]');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Publishing...';
+}
+
+// ── Live Video (WebRTC camera preview) ──────────────────────
+let liveStream = null;
+let facingMode = 'user';
+let muted = false;
+
+async function openLive() {
+    try {
+        liveStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode }, audio: true
+        });
+        document.getElementById('liveVideo').srcObject = liveStream;
+        document.getElementById('liveModal').classList.add('open');
+    } catch(e) {
+        alert('Camera access denied or not available.');
+    }
+}
+function stopLive() {
+    if (liveStream) liveStream.getTracks().forEach(t => t.stop());
+    liveStream = null;
+    document.getElementById('liveModal').classList.remove('open');
+}
+async function toggleCamera() {
+    facingMode = facingMode === 'user' ? 'environment' : 'user';
+    if (liveStream) {
+        liveStream.getTracks().forEach(t => t.stop());
+        liveStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode }, audio: true
+        });
+        document.getElementById('liveVideo').srcObject = liveStream;
+    }
+}
+function toggleMute() {
+    muted = !muted;
+    if (liveStream) liveStream.getAudioTracks().forEach(t => t.enabled = !muted);
+    document.getElementById('muteIcon').className = muted
+        ? 'fa-solid fa-microphone-slash' : 'fa-solid fa-microphone';
+}
+
+// ── People You May Know: AJAX add/cancel friend ──────────────
+async function toggleFriendRequest(btn) {
+    const uid    = btn.dataset.uid;
+    const status = btn.dataset.status;
+
+    let url, newStatus, newLabel, newBg;
+    if (status === 'REQUEST_SENT') {
+        url = '/friends/cancel-ajax/' + uid;
+        newStatus = 'NONE'; newLabel = 'Add Friend';
+        newBg = 'background:#1d4ed8;color:#fff;border:none;';
+    } else {
+        url = '/friends/request-ajax/' + uid;
+        newStatus = 'REQUEST_SENT'; newLabel = 'Cancel Request';
+        newBg = 'border:1px solid #e2e8f0;background:#fff;color:#374151;';
+    }
+
+    btn.disabled = true;
+    try {
+        const res  = await fetch(url, {method:'POST'});
+        const data = await res.json();
+        if (data.status === 'ERROR') { alert(data.message); return; }
+        btn.dataset.status = newStatus;
+        btn.textContent    = newLabel;
+        btn.style.cssText  = 'width:100%;border-radius:10px;padding:6px;font-size:.78rem;font-weight:600;cursor:pointer;font-family:inherit;' + newBg;
+    } catch(e) { alert('Network error. Please try again.'); }
+    finally { btn.disabled = false; }
+}
+</script>
+
+</body>
+</html>

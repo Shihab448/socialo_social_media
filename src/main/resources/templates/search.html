@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/search.css}">
+</head>
+<body>
+
+<header class="search-header">
+    <a th:href="@{/home}" class="back-btn"><i class="fa-solid fa-arrow-left"></i></a>
+
+    <form th:action="@{/search}" method="get" class="search-input" style="flex:1;display:flex;align-items:center;gap:10px;">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" name="q" th:value="${query}" placeholder="Search friends, posts..."
+               autofocus autocomplete="off">
+        <button type="submit" style="border:none;background:transparent;cursor:pointer;color:#1d4ed8;font-weight:600;white-space:nowrap;">
+            Search
+        </button>
+    </form>
+</header>
+
+<main class="search-page">
+
+    <!-- No query yet -->
+    <th:block th:if="${query == null or query.isBlank()}">
+        <div style="text-align:center;padding:60px 24px;">
+            <i class="fa-solid fa-magnifying-glass" style="font-size:3rem;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+            <h3 style="color:#64748b;font-weight:600;">Search for people</h3>
+            <p style="color:#94a3b8;font-size:.9rem;">Type a name or username to find friends</p>
+        </div>
+    </th:block>
+
+    <!-- Results -->
+    <th:block th:if="${query != null and !query.isBlank()}">
+
+        <th:block th:if="${#lists.isEmpty(results)}">
+            <div style="text-align:center;padding:60px 24px;">
+                <i class="fa-regular fa-face-sad-tear" style="font-size:3rem;color:#cbd5e1;margin-bottom:16px;display:block;"></i>
+                <h3 style="color:#64748b;">No results for "<span th:text="${query}"></span>"</h3>
+                <p style="color:#94a3b8;font-size:.9rem;">Try a different name or username</p>
+            </div>
+        </th:block>
+
+        <section class="result-section" th:if="${!#lists.isEmpty(results)}">
+            <h2 th:text="${#lists.size(results) + ' results for: ' + query}" style="margin-bottom:16px;font-size:1rem;color:#475569;"></h2>
+
+            <th:block th:each="result : ${results}">
+                <div class="user-card">
+                    <a th:href="@{/user-profile/{id}(id=${result.id})}" style="display:flex;align-items:center;gap:12px;text-decoration:none;flex:1;">
+                        <img th:src="${result.displayProfileImage}"
+                             th:alt="${result.fullName}"
+                             style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
+                        <div class="user-info">
+                            <h4 th:text="${result.fullName}">Name</h4>
+                            <p th:text="${'@' + (result.username != null ? result.username : 'user')}">@user</p>
+                        </div>
+                    </a>
+                    <form th:action="@{/friends/request/{id}(id=${result.id})}" method="post">
+                        <button type="submit"
+                                style="background:#1d4ed8;color:#fff;border:none;border-radius:12px;padding:8px 18px;font-size:.85rem;font-weight:600;cursor:pointer;font-family:inherit;">
+                            Add Friend
+                        </button>
+                    </form>
+                </div>
+            </th:block>
+
+        </section>
+
+    </th:block>
+
+</main>
+
+</body>
+</html>

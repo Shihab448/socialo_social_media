@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${targetUser.fullName + ' - Socialo'}">Profile - Socialo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/user-profile.css}">
+    <link rel="stylesheet" th:href="@{/css/cover-fix.css}">
+</head>
+<body>
+
+<header class="navbar">
+    <a th:href="@{/home}" class="brand">
+        <i class="fa-solid fa-arrow-left back-icon"></i>
+        <img th:src="@{/images/socialo-logo.png}" alt="Socialo" class="brand-logo">
+        <span>Socialo</span>
+    </a>
+</header>
+
+<main class="profile-page">
+
+    <!-- Blurred cover -->
+    <section class="cover-section">
+        <div class="cover-photo" style="filter:blur(8px);overflow:hidden;">
+            <img th:src="${targetUser.displayCoverImage}" alt="Cover"
+                 style="width:100%;height:100%;object-fit:cover;">
+        </div>
+
+        <div class="profile-header">
+            <div class="profile-avatar-wrap">
+                <!-- Blurred avatar -->
+                <img th:src="${targetUser.displayProfileImage}"
+                     class="profile-avatar"
+                     style="filter:blur(6px);"
+                     alt="Profile">
+            </div>
+
+            <div class="profile-main">
+                <div class="profile-name-row">
+                    <div>
+                        <h1 th:text="${targetUser.fullName}">Name</h1>
+                        <p class="username"
+                           th:text="${'@' + (targetUser.username != null ? targetUser.username : 'user')}">@user</p>
+                    </div>
+                    <span style="background:rgba(0,0,0,.12);color:#374151;padding:6px 14px;border-radius:20px;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:6px;">
+                        <i class="fa-solid fa-lock"></i>
+                        <span th:text="${targetUser.profileLocked ? 'Profile Locked' : 'Private Profile'}">Locked</span>
+                    </span>
+                </div>
+
+                <!-- Restricted message box -->
+                <div style="background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:28px 24px;margin-top:16px;text-align:center;max-width:480px;">
+                    <div style="width:60px;height:60px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:1.6rem;color:#6b7280;">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <h3 style="font-size:1.05rem;font-weight:700;color:#111827;margin-bottom:8px;">
+                        This profile is only available to friends
+                    </h3>
+                    <p style="color:#6b7280;font-size:.9rem;margin-bottom:20px;line-height:1.6;">
+                        Send a friend request to <strong th:text="${targetUser.firstName}">this user</strong>
+                        to see their full profile, posts and photos.
+                    </p>
+
+                    <!-- Friend request action -->
+                    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                        <form th:action="@{/friends/request/{id}(id=${targetUser.id})}" method="post">
+                            <button type="submit"
+                                    style="background:#1d4ed8;color:#fff;border:none;border-radius:12px;padding:10px 22px;font-size:.9rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit;">
+                                <i class="fa-solid fa-user-plus"></i> Add Friend
+                            </button>
+                        </form>
+                        <a th:href="@{/home}"
+                           style="background:#f3f4f6;color:#374151;border:none;border-radius:12px;padding:10px 22px;font-size:.9rem;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:8px;">
+                            <i class="fa-solid fa-arrow-left"></i> Go Back
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socialo Sign Up</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/signup.css}">
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+<div class="orb orb4"></div>
+
+<div class="container">
+    <div class="logo-section">
+        <img th:src="@{/images/socialo-logo.png}" alt="Socialo Logo" class="logo">
+        <h1>Socialo</h1>
+        <p class="tagline">Create your account and join the community</p>
+    </div>
+
+    <div class="card">
+        <h2>Create Account</h2>
+
+        <div th:if="${error}"
+             style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);color:#fca5a5;
+                    padding:12px 16px;border-radius:14px;margin-bottom:18px;font-size:.9rem;text-align:center;"
+             th:text="${error}"></div>
+
+        <form th:action="@{/signup}" method="post" enctype="multipart/form-data" id="signupForm">
+
+            <div class="grid">
+                <div class="input-group">
+                    <i class="fa-regular fa-user icon"></i>
+                    <input type="text" name="firstName" placeholder="First Name" required>
+                </div>
+                <div class="input-group">
+                    <i class="fa-regular fa-user icon"></i>
+                    <input type="text" name="lastName" placeholder="Last Name" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <i class="fa-solid fa-at icon"></i>
+                <input type="text" name="username" placeholder="Username (optional)">
+            </div>
+
+            <div class="input-group">
+                <i class="fa-regular fa-calendar icon"></i>
+                <input type="date" name="dateOfBirth">
+            </div>
+
+            <!-- Email — REQUIRED -->
+            <div class="input-group" style="border:1px solid rgba(29,78,216,.4);">
+                <i class="fa-solid fa-envelope icon" style="color:#93c5fd;"></i>
+                <input type="email" id="emailInput" name="email"
+                       placeholder="Email Address (required)"
+                       required autocomplete="email">
+            </div>
+            <p style="color:#8da2a8;font-size:.77rem;margin:-8px 0 12px;padding-left:4px;">
+                <i class="fa-solid fa-circle-info" style="color:#93c5fd;"></i>
+                A 6-digit verification code will be sent to this email.
+            </p>
+
+            <!-- Phone — optional -->
+            <div class="input-group">
+                <i class="fa-solid fa-phone icon"></i>
+                <input type="tel" name="phone" placeholder="Phone Number (optional)">
+            </div>
+
+            <div class="input-group">
+                <i class="fa-solid fa-lock icon"></i>
+                <input type="password" name="password" id="passInput"
+                       placeholder="Password (min 6 chars)" required>
+            </div>
+
+            <div class="input-group">
+                <i class="fa-solid fa-lock icon"></i>
+                <input type="password" name="confirmPassword" id="confirmInput"
+                       placeholder="Confirm Password" required>
+            </div>
+
+            <p id="matchHint" style="font-size:.78rem;margin:-8px 0 12px;text-align:center;display:none;"></p>
+
+            <div class="section-title">
+                <i class="fa-solid fa-circle-user"></i>
+                Profile Photo (Optional)
+            </div>
+
+            <div class="upload-box">
+                <label for="profilePicture" class="upload-label">
+                    <i class="fa-solid fa-image"></i>
+                    <span id="fileText">Upload Profile Picture</span>
+                </label>
+                <input type="file" id="profilePicture" name="profilePicture" accept="image/*" hidden>
+                <div class="file-actions">
+                    <button type="button" class="cancel-btn" onclick="clearFile()">
+                        <i class="fa-solid fa-xmark"></i> Cancel
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="signup-btn" id="submitBtn">
+                <span>Create Account</span>
+                <span class="arrow"><i class="fa-solid fa-chevron-right"></i></span>
+            </button>
+
+        </form>
+    </div>
+
+    <div class="footer">
+        <p>
+            Already have an account?
+            <a th:href="@{/login}">Login <i class="fa-solid fa-chevron-right"></i></a>
+        </p>
+    </div>
+</div>
+
+<script>
+// Password match hint
+document.getElementById('confirmInput').addEventListener('input', function() {
+    const hint = document.getElementById('matchHint');
+    hint.style.display = 'block';
+    const ok = this.value === document.getElementById('passInput').value;
+    hint.textContent = ok ? '✓ Passwords match' : '✗ Passwords do not match';
+    hint.style.color  = ok ? '#86efac' : '#fca5a5';
+});
+
+// Submit validation
+document.getElementById('signupForm').addEventListener('submit', function(e) {
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email) {
+        e.preventDefault();
+        alert('Email address is required to create a Socialo account.');
+        document.getElementById('emailInput').focus();
+        return;
+    }
+    const pass    = document.getElementById('passInput').value;
+    const confirm = document.getElementById('confirmInput').value;
+    if (pass !== confirm) {
+        e.preventDefault();
+        alert('Passwords do not match.');
+        return;
+    }
+    if (pass.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters.');
+        return;
+    }
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span><i class="fa-solid fa-circle-notch fa-spin"></i> Creating...</span>';
+});
+
+// Profile picture
+const fileInput = document.getElementById('profilePicture');
+fileInput.addEventListener('change', function() {
+    document.getElementById('fileText').textContent =
+        this.files.length > 0 ? this.files[0].name : 'Upload Profile Picture';
+});
+function clearFile() {
+    fileInput.value = '';
+    document.getElementById('fileText').textContent = 'Upload Profile Picture';
+}
+</script>
+
+</body>
+</html>
