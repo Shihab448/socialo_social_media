@@ -5,3 +5,4 @@ EXPOSE 10000
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
 
+
